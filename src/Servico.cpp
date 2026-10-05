@@ -1,6 +1,9 @@
 #include "Servico.hpp"
 
-Servico::Servico(int duracaoMinutos, Especialidade especialidade) : duracaoMinutos_(duracaoMinutos), especialidade_(especialidade) {}
+Servico::Servico(int duracaoMinutos, Especialidade especialidade) : duracaoMinutos_(duracaoMinutos), especialidade_(especialidade) {
+    // TODO: lançar DadoInvalidoException se duracaoMinutos <= 0
+    // (a exceção ainda não existe; ver feat/excecoes)
+}
 
 Servico::~Servico() {}
 
