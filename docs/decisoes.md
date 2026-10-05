@@ -114,6 +114,27 @@ POO que as outras partes já não pratiquem (composição, associação).
 **Pendente.** Definir se pagar duas vezes ou pagar agendamento cancelado
 lança exceção própria.
 
+## 6. `Especialidade`: `enum class` em header próprio
+
+**Contexto.** `Especialidade` (`Tatuagem`, `Piercing`) é usada por `Servico`
+e por `Funcionario`. Os nomes dos enumeradores coincidem com os das classes
+`Tatuagem` e `Piercing`.
+
+**Alternativas.**
+- Declarar o enum dentro de `Funcionario.hpp`: `Servico` passaria a depender
+  de `Funcionario` só por causa do enum, com risco de include circular.
+- `enum` comum: os enumeradores caem no escopo global e conflitam com as
+  classes de mesmo nome.
+- `enum class` em header próprio.
+
+**Decisão.** `enum class Especialidade` em `include/Especialidade.hpp`,
+que contém apenas o enum.
+
+**Motivo.** O header próprio mantém `Servico` e `Funcionario` independentes
+entre si. O `enum class` mantém os enumeradores dentro do escopo
+(`Especialidade::Tatuagem`), o que elimina o conflito de nomes e impede
+conversões implícitas para inteiro.
+
 ## Fora do escopo por ora
 
 - Forma de pagamento (dinheiro, Pix, cartão) e pagamento parcial.
