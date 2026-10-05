@@ -38,7 +38,7 @@ classDiagram
     }
 
     class Funcionario {
-        -vector~Especialidade~ especialidades_
+        -Especialidade especialidade_
         -double comissao_
         +exibirInfo() void
     }
