@@ -10,10 +10,10 @@ Objetos (ICMC-USP).
 - **Herança**: `Cliente` e `Funcionario` herdando de `Pessoa`; `Tatuagem`,
   `Piercing` e `Retoque` herdando de `Servico`; hierarquia de exceções a
   partir de `EstudioException`.
-- **Polimorfismo**: métodos virtuais puros `exibirInfo()` (em `Pessoa`),
-  `calcularPreco()` e `especialidadeExigida()` (em `Servico`), usados por
-  meio de `std::unique_ptr<Servico>` no `Agendamento`, que é o único dono
-  do serviço.
+- **Polimorfismo**: métodos virtuais puros `exibirInfo()` (em `Pessoa`) e
+  `calcularPreco()` (em `Servico`), usados por meio de
+  `std::unique_ptr<Servico>` no `Agendamento`, que é o único dono do
+  serviço.
 - **Tratamento de erros com exceções**: hierarquia própria de exceções
   derivada de `std::runtime_error`.
 
@@ -52,12 +52,14 @@ classDiagram
     Pessoa <|-- Cliente
     Pessoa <|-- Funcionario
     Funcionario --> Especialidade
+    Servico --> Especialidade
 
     class Servico {
         <<abstract>>
         -int duracaoMinutos_
+        -Especialidade especialidade_
+        +getEspecialidade() Especialidade
         +calcularPreco() double
-        +especialidadeExigida() Especialidade
     }
 
     class Tatuagem {
@@ -65,21 +67,18 @@ classDiagram
         -Complexidade complexidade_
         -string descricao_
         +calcularPreco() double
-        +especialidadeExigida() Especialidade
     }
 
     class Piercing {
         -string tipoJoia_
         -double precoJoia_
         +calcularPreco() double
-        +especialidadeExigida() Especialidade
     }
 
     class Retoque {
         -double precoBase_
         -double percentualDesconto_
         +calcularPreco() double
-        +especialidadeExigida() Especialidade
     }
 
     Servico <|-- Tatuagem
