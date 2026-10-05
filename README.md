@@ -220,12 +220,13 @@ git pull
 
 ## Divisão de tarefas
 
-| Tarefa | Responsável | Status |
-|--------|--------------|--------|
-|        |              |        |
-|        |              |        |
-|        |              |        |
-|        |              |        |
+| Tarefa | Responsável |
+|--------|-------------|
+| `Servico` → `Tatuagem`, `Piercing`, `Retoque` | Luís |
+| `Pessoa` → `Cliente`, `Tatuador` | Miguel |
+| `Agendamento` | a definir |
+| Exceções (`EstudioException` e derivadas) | a definir |
+| `Estudio` e menu | a definir (em dupla) |
 
 ## Autores
 
