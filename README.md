@@ -7,12 +7,13 @@ Objetos (ICMC-USP).
 ## Requisitos da disciplina
 
 - **Classes**: entidades do domínio (pessoas, serviços, agendamentos, estúdio).
-- **Herança**: `Cliente` e `Tatuador` herdando de `Pessoa`; `Tatuagem`,
+- **Herança**: `Cliente` e `Funcionario` herdando de `Pessoa`; `Tatuagem`,
   `Piercing` e `Retoque` herdando de `Servico`; hierarquia de exceções a
   partir de `EstudioException`.
-- **Polimorfismo**: métodos virtuais puros `exibirInfo()` (em `Pessoa`) e
-  `calcularPreco()` (em `Servico`), usados por meio de `std::shared_ptr` em
-  containers polimórficos.
+- **Polimorfismo**: métodos virtuais puros `exibirInfo()` (em `Pessoa`),
+  `calcularPreco()` e `especialidadeExigida()` (em `Servico`), usados por
+  meio de `std::unique_ptr<Servico>` no `Agendamento`, que é o único dono
+  do serviço.
 - **Tratamento de erros com exceções**: hierarquia própria de exceções
   derivada de `std::runtime_error`.
 
@@ -32,24 +33,31 @@ classDiagram
     }
 
     class Cliente {
-        -vector~string~ historicoSessoes_
         -string alergiasObservacoes_
         +exibirInfo() void
     }
 
-    class Tatuador {
-        -vector~string~ especialidades_
+    class Funcionario {
+        -vector~Especialidade~ especialidades_
         -double comissao_
         +exibirInfo() void
     }
 
+    class Especialidade {
+        <<enumeration>>
+        Tatuagem
+        Piercing
+    }
+
     Pessoa <|-- Cliente
-    Pessoa <|-- Tatuador
+    Pessoa <|-- Funcionario
+    Funcionario --> Especialidade
 
     class Servico {
         <<abstract>>
         -int duracaoMinutos_
         +calcularPreco() double
+        +especialidadeExigida() Especialidade
     }
 
     class Tatuagem {
@@ -57,18 +65,21 @@ classDiagram
         -Complexidade complexidade_
         -string descricao_
         +calcularPreco() double
+        +especialidadeExigida() Especialidade
     }
 
     class Piercing {
         -string tipoJoia_
         -double precoJoia_
         +calcularPreco() double
+        +especialidadeExigida() Especialidade
     }
 
     class Retoque {
         -double precoBase_
         -double percentualDesconto_
         +calcularPreco() double
+        +especialidadeExigida() Especialidade
     }
 
     Servico <|-- Tatuagem
@@ -78,24 +89,29 @@ classDiagram
     class Agendamento {
         -string dataHora_
         -Status status_
+        -bool pago_
+        -unique_ptr~Servico~ servico_
         +confirmar() void
         +cancelar() void
+        +pagar() void
     }
 
     class Estudio {
         -vector~Cliente~ clientes_
-        -vector~Tatuador~ tatuadores_
+        -vector~Funcionario~ funcionarios_
         -vector~Agendamento~ agendamentos_
         +cadastrarCliente(Cliente) void
-        +cadastrarTatuador(Tatuador) void
+        +cadastrarFuncionario(Funcionario) void
         +agendar(...) Agendamento
+        +agendamentosDoCliente(...) vector~Agendamento~
+        +agendamentosDoFuncionario(...) vector~Agendamento~
     }
 
     Agendamento --> Cliente
-    Agendamento --> Tatuador
-    Agendamento --> Servico
+    Agendamento --> Funcionario
+    Agendamento *-- Servico : dono único
     Estudio --> Cliente
-    Estudio --> Tatuador
+    Estudio --> Funcionario
     Estudio --> Agendamento
 
     class EstudioException {
@@ -223,7 +239,7 @@ git pull
 | Tarefa | Responsável |
 |--------|-------------|
 | `Servico` → `Tatuagem`, `Piercing`, `Retoque` | Luís |
-| `Pessoa` → `Cliente`, `Tatuador` | Miguel |
+| `Pessoa` → `Cliente`, `Funcionario` | Miguel |
 | `Agendamento` | a definir |
 | Exceções (`EstudioException` e derivadas) | a definir |
 | `Estudio` e menu | a definir (em dupla) |
