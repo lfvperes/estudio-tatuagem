@@ -9,6 +9,7 @@ std::string Tatuagem::getDescricao() const {
     return descricao_;
 }
 
+// valores definidos arbitrariamente, ver docs/decisoes.md
 static double fatorTamanho(Tamanho tamanho) {
     switch (tamanho) {
     case Tamanho::Pequena:
@@ -17,11 +18,16 @@ static double fatorTamanho(Tamanho tamanho) {
         return 2.0;
     case Tamanho::Grande:
         return 4.0;
+    // sem default de propósito: o -Wswitch avisa se um enumerador novo ficar sem fator
     }
     // TODO subir uma exception que ainda nao existe, como DadoInvalidoException
+    
+    // só alcançável com um valor de enum inválido (ex.: cast); o valor-sentinela
+    // chama atenção até a exceção existir
     return -1.0;
 }
 
+// valores definidos arbitrariamente, ver docs/decisoes.md
 static double fatorComplexidade(Complexidade complexidade) {
     switch (complexidade) {
     case Complexidade::Baixa:
@@ -30,8 +36,12 @@ static double fatorComplexidade(Complexidade complexidade) {
         return 1.5;
     case Complexidade::Alta:
         return 2.0;
+    // sem default de propósito: o -Wswitch avisa se um enumerador novo ficar sem fator
     }
     // TODO subir uma exception que ainda nao existe, como DadoInvalidoException
+    
+    // só alcançável com um valor de enum inválido (ex.: cast); o valor-sentinela
+    // chama atenção até a exceção existir
     return -1.0;
 }
 
@@ -49,6 +59,9 @@ static std::string tamanhoParaString(Tamanho tamanho) {
         return "grande";
     }
     // TODO subir uma exception que ainda nao existe, como DadoInvalidoException
+    
+    // só alcançável com um valor de enum inválido (ex.: cast); o valor-sentinela
+    // chama atenção até a exceção existir
     return "?";
 }
 
@@ -62,6 +75,9 @@ static std::string complexidadeParaString(Complexidade complexidade) {
         return "alta";
     }
     // TODO subir uma exception que ainda nao existe, como DadoInvalidoException
+
+    // só alcançável com um valor de enum inválido (ex.: cast); o valor-sentinela
+    // chama atenção até a exceção existir
     return "?";
 }
 
