@@ -135,6 +135,32 @@ entre si. O `enum class` mantém os enumeradores dentro do escopo
 (`Especialidade::Tatuagem`), o que elimina o conflito de nomes e impede
 conversões implícitas para inteiro.
 
+## 7. Preço dos serviços
+
+**Decisão.** Preço = `TAXA_FIXA_SESSAO` (toda sessão) + parcela que escala com
+o serviço (`TAXA_MAO_DE_OBRA`). As constantes ficam no `.cpp` de cada filha,
+com valores próprios.
+
+| Serviço | Fórmula |
+|---|---|
+| `Tatuagem` | `30 + 50 × fatorTamanho × fatorComplexidade` |
+| `Piercing` | `precoJoia_ + 50` |
+| `Retoque` | `30 + 40`, com 30% de desconto se `feitaNoEstudio_` |
+
+- Fatores de tamanho: pequena 1, média 2, grande 4. Complexidade: baixa 1,
+  média 1,5, alta 2.
+- `Tamanho` e `Complexidade` são `enum class` em `Tatuagem.hpp` (não há área
+  em cm²). Tatuagem muito grande vira várias sessões, uma por `Agendamento`.
+- `Retoque` não tem `precoBase_` nem tamanho. O atributo `feitaNoEstudio_`
+  guarda o fato, e o desconto de 30% vale sobre as duas taxas.
+
+**Revisitar se** a taxa fixa ficar igual em todas as filhas (atributo em
+`Servico`) ou se `Retoque` precisar de tamanho (mover os enums para um header
+próprio).
+
+**Pendente.** `DadoInvalidoException` não existe: `TODO` em `Servico` (duração
+`<= 0`) e em `fatorTamanho`/`fatorComplexidade` (enum desconhecido).
+
 ## Fora do escopo por ora
 
 - Forma de pagamento (dinheiro, Pix, cartão) e pagamento parcial.

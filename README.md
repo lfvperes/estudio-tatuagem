@@ -58,6 +58,7 @@ classDiagram
         <<abstract>>
         -int duracaoMinutos_
         -Especialidade especialidade_
+        +getDuracaoMinutos() int
         +getEspecialidade() Especialidade
         +calcularPreco() double
     }
@@ -66,8 +67,26 @@ classDiagram
         -Tamanho tamanho_
         -Complexidade complexidade_
         -string descricao_
+        +getDescricao() string
         +calcularPreco() double
     }
+
+    class Tamanho {
+        <<enumeration>>
+        Pequena
+        Media
+        Grande
+    }
+
+    class Complexidade {
+        <<enumeration>>
+        Baixa
+        Media
+        Alta
+    }
+
+    Tatuagem --> Tamanho
+    Tatuagem --> Complexidade
 
     class Piercing {
         -string tipoJoia_
@@ -76,8 +95,8 @@ classDiagram
     }
 
     class Retoque {
-        -double precoBase_
-        -double percentualDesconto_
+        -bool feitaNoEstudio_
+        +isFeitaNoEstudio() bool
         +calcularPreco() double
     }
 
