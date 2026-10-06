@@ -58,8 +58,12 @@ classDiagram
         <<abstract>>
         -int duracaoMinutos_
         -Especialidade especialidade_
+        -double taxaMaoDeObra_
+        -double taxaFixaSessao_
         +getDuracaoMinutos() int
         +getEspecialidade() Especialidade
+        +getTaxaMaoDeObra() double
+        +getTaxaFixaSessao() double
         +calcularPreco() double
     }
 

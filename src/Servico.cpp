@@ -1,6 +1,6 @@
 #include "Servico.hpp"
 
-Servico::Servico(int duracaoMinutos, Especialidade especialidade) : duracaoMinutos_(duracaoMinutos), especialidade_(especialidade) {
+Servico::Servico(int duracaoMinutos, Especialidade especialidade, double taxaMaoDeObra, double taxaFixaSessao) : duracaoMinutos_(duracaoMinutos), especialidade_(especialidade), taxaMaoDeObra_(taxaMaoDeObra), taxaFixaSessao_(taxaFixaSessao) {
     // TODO: lançar DadoInvalidoException se duracaoMinutos <= 0
     // (a exceção ainda não existe; ver feat/excecoes)
 }
@@ -13,4 +13,12 @@ int Servico::getDuracaoMinutos() const {
 
 Especialidade Servico::getEspecialidade() const {
     return especialidade_;
+}
+
+double Servico::getTaxaMaoDeObra() const {
+    return taxaMaoDeObra_;
+}
+
+double Servico::getTaxaFixaSessao() const {
+    return taxaFixaSessao_;
 }
