@@ -1,5 +1,4 @@
 #include "Piercing.hpp"
-#include <string>
 
 constexpr double TAXA_FIXA_SESSAO = 30;
 constexpr double TAXA_MAO_DE_OBRA = 30;
@@ -8,4 +7,8 @@ Piercing::Piercing(int duracaoMinutos, std::string tipoJoia, double precoJoia) :
 
 double Piercing::calcularPreco() const {
     return precoJoia_ + getTaxaFixaSessao() + getTaxaMaoDeObra();
+}
+
+std::string Piercing::detalhes() const {
+    return "Piercing (" + tipoJoia_ + ", " + Servico::detalhes() + ")";
 }

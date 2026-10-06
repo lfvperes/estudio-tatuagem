@@ -22,3 +22,7 @@ double Servico::getTaxaMaoDeObra() const {
 double Servico::getTaxaFixaSessao() const {
     return taxaFixaSessao_;
 }
+
+std::string Servico::detalhes() const {
+    return std::to_string(duracaoMinutos_) + " min";
+}

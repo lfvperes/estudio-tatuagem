@@ -2,6 +2,7 @@
 #define SERVICO_HPP
 
 #include "Especialidade.hpp"
+#include <string>
 
 class Servico {
     private:
@@ -17,6 +18,7 @@ class Servico {
         virtual double calcularPreco() const = 0;
         double getTaxaMaoDeObra() const;
         double getTaxaFixaSessao() const;
+        virtual std::string detalhes() const;
 };
 
 #endif // SERVICO_HPP

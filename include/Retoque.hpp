@@ -2,6 +2,7 @@
 #define RETOQUE_HPP
 
 #include "Servico.hpp"
+#include <string>
 
 class Retoque : public Servico {
     private:
@@ -11,6 +12,7 @@ class Retoque : public Servico {
         Retoque(int duracaoMinutos, bool feitaNoEstudio);
         double calcularPreco() const override;
         bool isFeitaNoEstudio() const;
+        std::string detalhes() const override;
 };
 
 #endif // RETOQUE_HPP

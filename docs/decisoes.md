@@ -162,6 +162,20 @@ próprio).
 **Pendente.** `DadoInvalidoException` não existe: `TODO` em `Servico` (duração
 `<= 0`) e em `fatorTamanho`/`fatorComplexidade` (enum desconhecido).
 
+## 8. Texto de exibição dos serviços
+
+**Decisão.** `Servico` tem `virtual std::string detalhes() const` com
+implementação padrão (a duração, por exemplo `120 min`). Cada filha a
+sobrescreve, chama `Servico::detalhes()` e monta o próprio texto. O preço não
+entra no texto: o `Estudio` o obtém por `calcularPreco()`.
+
+- `Tatuagem (grande, complexidade alta, 120 min): <descrição>`
+- `Piercing (argola, 30 min)`
+- `Retoque (feita no estúdio, 60 min)`
+
+**Motivo.** O `Estudio` exibe qualquer serviço sem `if` por tipo, e as filhas
+não precisam de um getter para cada atributo.
+
 ## Fora do escopo por ora
 
 - Forma de pagamento (dinheiro, Pix, cartão) e pagamento parcial.

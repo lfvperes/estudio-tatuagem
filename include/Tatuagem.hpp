@@ -16,6 +16,7 @@ class Tatuagem : public Servico {
         Tatuagem(int duracaoMinutos, Tamanho tamanho, Complexidade complexidade, std::string descricao);
         double calcularPreco() const override;
         std::string getDescricao() const;
+        std::string detalhes() const override;
 };
 
 

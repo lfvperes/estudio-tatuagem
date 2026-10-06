@@ -38,3 +38,33 @@ static double fatorComplexidade(Complexidade complexidade) {
 double Tatuagem::calcularPreco() const {
     return getTaxaFixaSessao() + getTaxaMaoDeObra() * fatorTamanho(tamanho_) * fatorComplexidade(complexidade_);
 }
+
+static std::string tamanhoParaString(Tamanho tamanho) {
+    switch (tamanho) {
+    case Tamanho::Pequena:
+        return "pequena";
+    case Tamanho::Media:
+        return "média";
+    case Tamanho::Grande:
+        return "grande";
+    }
+    // TODO subir uma exception que ainda nao existe, como DadoInvalidoException
+    return "?";
+}
+
+static std::string complexidadeParaString(Complexidade complexidade) {
+    switch (complexidade) {
+    case Complexidade::Baixa:
+        return "baixa";
+    case Complexidade::Media:
+        return "média";
+    case Complexidade::Alta:
+        return "alta";
+    }
+    // TODO subir uma exception que ainda nao existe, como DadoInvalidoException
+    return "?";
+}
+
+std::string Tatuagem::detalhes() const {
+    return "Tatuagem (" + tamanhoParaString(tamanho_) + ", complexidade " + complexidadeParaString(complexidade_) + ", " + Servico::detalhes() + "): " + descricao_;
+}

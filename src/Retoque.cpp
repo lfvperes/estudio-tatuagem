@@ -17,3 +17,7 @@ double Retoque::calcularPreco() const {
         return multiplicadorDesconto * precoSemDesconto;
     return precoSemDesconto;
 }
+
+std::string Retoque::detalhes() const {
+    return "Retoque (feita " + std::string(feitaNoEstudio_ ? "no" : "fora do") + " estúdio, " + Servico::detalhes() + ")";
+}

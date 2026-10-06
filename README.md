@@ -64,6 +64,7 @@ classDiagram
         +getEspecialidade() Especialidade
         +getTaxaMaoDeObra() double
         +getTaxaFixaSessao() double
+        +detalhes() string
         +calcularPreco() double
     }
 
@@ -72,6 +73,7 @@ classDiagram
         -Complexidade complexidade_
         -string descricao_
         +getDescricao() string
+        +detalhes() string
         +calcularPreco() double
     }
 
@@ -95,12 +97,14 @@ classDiagram
     class Piercing {
         -string tipoJoia_
         -double precoJoia_
+        +detalhes() string
         +calcularPreco() double
     }
 
     class Retoque {
         -bool feitaNoEstudio_
         +isFeitaNoEstudio() bool
+        +detalhes() string
         +calcularPreco() double
     }
 
