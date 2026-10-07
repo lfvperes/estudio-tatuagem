@@ -240,7 +240,7 @@ git pull
 | `Servico` → `Tatuagem`, `Piercing`, `Retoque` | Luís |
 | `Pessoa` → `Cliente`, `Funcionario` | Miguel |
 | `Agendamento` | a definir |
-| Exceções (`EstudioException` e derivadas) | a definir |
+| Exceções (`EstudioException` e derivadas) | Luís |
 | `Estudio` e menu | a definir (em dupla) |
 
 ## Autores
