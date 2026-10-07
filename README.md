@@ -4,6 +4,24 @@ Sistema de gerenciamento de um estúdio de tatuagem em C++, com interface em
 terminal. Projeto desenvolvido para a disciplina de Programação Orientada a
 Objetos (ICMC-USP).
 
+## Uso de IA
+
+Este projeto usa o Claude Code (Anthropic) como ferramenta de apoio. A
+implementação do código (classes, lógica e `main`) é feita manualmente pela
+dupla; o objetivo da disciplina é aprender, e por isso a IA não escreve o
+código-fonte do projeto.
+
+A IA é usada para:
+
+- **Documentação:** edição do README, do diagrama de classes e do registro
+  de decisões (`docs/decisoes.md`). Os commits desse tipo trazem a linha
+  `Co-Authored-By` no histórico do git.
+- **Apoio ao aprendizado:** funciona como tutor, explicando conceitos,
+  propondo perguntas e experimentos e discutindo alternativas de design. As
+  decisões são tomadas pela dupla.
+- **Revisão de código:** apontar problemas e sugerir melhorias no código já
+  escrito, que a dupla avalia e aplica por conta própria.
+
 ## Requisitos da disciplina
 
 - **Classes**: entidades do domínio (pessoas, serviços, agendamentos, estúdio).
