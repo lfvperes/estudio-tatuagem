@@ -3,7 +3,7 @@
 constexpr double TAXA_FIXA_SESSAO = 30;
 constexpr double TAXA_MAO_DE_OBRA = 50;
 
-Tatuagem::Tatuagem(int duracaoMinutos, Tamanho tamanho, Complexidade complexidade, std::string descricao) : Servico(duracaoMinutos, Especialidade::Tatuagem, TAXA_MAO_DE_OBRA, TAXA_FIXA_SESSAO), tamanho_(tamanho), complexidade_(complexidade), descricao_(descricao) {}
+Tatuagem::Tatuagem(int duracaoMinutos, Tamanho tamanho, Complexidade complexidade, const std::string& descricao) : Servico(duracaoMinutos, Especialidade::Tatuagem, TAXA_MAO_DE_OBRA, TAXA_FIXA_SESSAO), tamanho_(tamanho), complexidade_(complexidade), descricao_(descricao) {}
 
 std::string Tatuagem::getDescricao() const {
     return descricao_;

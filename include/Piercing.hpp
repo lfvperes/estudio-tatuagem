@@ -9,7 +9,7 @@ class Piercing : public Servico {
         std::string tipoJoia_;
         double precoJoia_;
     public:
-        Piercing(int duracaoMinutos, std::string tipoJoia, double precoJoia);
+        Piercing(int duracaoMinutos, const std::string& tipoJoia, double precoJoia);
         double calcularPreco() const override;
         std::string detalhes() const override;
 };
