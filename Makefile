@@ -1,5 +1,5 @@
 CXX := g++
-CXXFLAGS := -std=c++17 -Wall -Wextra -Iinclude
+CXXFLAGS := -std=c++17 -Wall -Wextra -Iinclude -MMD -MP
 
 BUILD_DIR := build
 SRC_DIR := src
@@ -27,3 +27,5 @@ run: all
 
 clean:
 	rm -rf $(BUILD_DIR)
+
+-include $(OBJECTS:.o=.d)
