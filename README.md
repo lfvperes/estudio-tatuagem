@@ -35,7 +35,8 @@ A IA é usada para:
 - **Tratamento de erros com exceções**: hierarquia própria de exceções
   derivada de `std::runtime_error`.
 
-As classes ainda não foram implementadas — o diagrama abaixo é o ponto de
+Já estão implementadas as hierarquias de `Servico`, `Pessoa` e de exceções;
+faltam `Agendamento`, `Estudio` e o menu. O diagrama abaixo é o ponto de
 partida de design acordado pela dupla; ele pode e deve ser ajustado conforme
 o código for escrito.
 
@@ -179,8 +180,8 @@ classDiagram
 
 Requisitos: `g++` com suporte a C++17 e `make`.
 
-> Ainda não há código em `src/`/`include/` — o `make` só vai gerar um
-> executável depois que as classes e o `main.cpp` forem escritos.
+> O `src/main.cpp` ainda é um placeholder: o `make` gera o executável, mas
+> ele não faz nada até o `Estudio` e o menu serem escritos.
 
 ```bash
 make

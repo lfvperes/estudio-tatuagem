@@ -1,4 +1,5 @@
 #include "Tatuagem.hpp"
+#include "DadoInvalidoException.hpp"
 
 constexpr double TAXA_FIXA_SESSAO = 30;
 constexpr double TAXA_MAO_DE_OBRA = 50;
@@ -20,11 +21,7 @@ static double fatorTamanho(Tamanho tamanho) {
         return 4.0;
     // sem default de propósito: o -Wswitch avisa se um enumerador novo ficar sem fator
     }
-    // TODO subir uma exception que ainda nao existe, como DadoInvalidoException
-    
-    // só alcançável com um valor de enum inválido (ex.: cast); o valor-sentinela
-    // chama atenção até a exceção existir
-    return -1.0;
+    throw DadoInvalidoException("Tamanho \"" + std::to_string(static_cast<int>(tamanho)) + "\" não existe.");
 }
 
 // valores definidos arbitrariamente, ver docs/decisoes.md
@@ -38,11 +35,7 @@ static double fatorComplexidade(Complexidade complexidade) {
         return 2.0;
     // sem default de propósito: o -Wswitch avisa se um enumerador novo ficar sem fator
     }
-    // TODO subir uma exception que ainda nao existe, como DadoInvalidoException
-    
-    // só alcançável com um valor de enum inválido (ex.: cast); o valor-sentinela
-    // chama atenção até a exceção existir
-    return -1.0;
+    throw DadoInvalidoException("Complexidade \"" + std::to_string(static_cast<int>(complexidade)) + "\" não existe.");
 }
 
 double Tatuagem::calcularPreco() const {
@@ -58,11 +51,7 @@ static std::string tamanhoParaString(Tamanho tamanho) {
     case Tamanho::Grande:
         return "grande";
     }
-    // TODO subir uma exception que ainda nao existe, como DadoInvalidoException
-    
-    // só alcançável com um valor de enum inválido (ex.: cast); o valor-sentinela
-    // chama atenção até a exceção existir
-    return "?";
+    throw DadoInvalidoException("Tamanho \"" + std::to_string(static_cast<int>(tamanho)) + "\" não existe.");
 }
 
 static std::string complexidadeParaString(Complexidade complexidade) {
@@ -74,11 +63,7 @@ static std::string complexidadeParaString(Complexidade complexidade) {
     case Complexidade::Alta:
         return "alta";
     }
-    // TODO subir uma exception que ainda nao existe, como DadoInvalidoException
-
-    // só alcançável com um valor de enum inválido (ex.: cast); o valor-sentinela
-    // chama atenção até a exceção existir
-    return "?";
+    throw DadoInvalidoException("Complexidade \"" + std::to_string(static_cast<int>(complexidade)) + "\" não existe.");
 }
 
 std::string Tatuagem::detalhes() const {

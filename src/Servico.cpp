@@ -1,8 +1,10 @@
 #include "Servico.hpp"
+#include "DadoInvalidoException.hpp"
 
 Servico::Servico(int duracaoMinutos, Especialidade especialidade, double taxaMaoDeObra, double taxaFixaSessao) : duracaoMinutos_(duracaoMinutos), especialidade_(especialidade), taxaMaoDeObra_(taxaMaoDeObra), taxaFixaSessao_(taxaFixaSessao) {
-    // TODO: lançar DadoInvalidoException se duracaoMinutos <= 0
-    // (a exceção ainda não existe; ver feat/excecoes)
+    if (duracaoMinutos <= 0) {
+        throw DadoInvalidoException("Duração fornecida foi " + std::to_string(duracaoMinutos) + ", mas deve ser maior que 0.");
+    }
 }
 
 Servico::~Servico() {}

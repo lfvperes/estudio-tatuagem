@@ -182,8 +182,9 @@ nomeados, ou usar um tipo distinto para cada taxa.
 **Revisitar se** `Retoque` precisar de tamanho (mover os enums para um header
 próprio).
 
-**Pendente.** `DadoInvalidoException` não existe: `TODO` em `Servico` (duração
-`<= 0`) e em `fatorTamanho`/`fatorComplexidade` (enum desconhecido).
+**Exceções.**
+- Em `Servico`, duração `<= 0` lança `DadoInvalidoException`.
+- Em `Tatuagem`, enum desconhecido lança `DadoInvalidoException`. Tratado como dado inválido por simplicidade; um `std::logic_error` seria mais preciso (erro de programação) e evitaria que o menu o trate como erro do usuário, mas exigiria outra família de exceção. Este caminho é praticamente inalcançável.
 
 ## 8. Texto de exibição dos serviços
 
