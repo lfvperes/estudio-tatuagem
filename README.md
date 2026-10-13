@@ -165,13 +165,11 @@ classDiagram
 
     class HorarioIndisponivelException
     class EspecialidadeIncompativelException
-    class ClienteMenorDeIdadeException
     class DadoInvalidoException
     class CancelamentoForaDoPrazoException
 
     EstudioException <|-- HorarioIndisponivelException
     EstudioException <|-- EspecialidadeIncompativelException
-    EstudioException <|-- ClienteMenorDeIdadeException
     EstudioException <|-- DadoInvalidoException
     EstudioException <|-- CancelamentoForaDoPrazoException
 ```
