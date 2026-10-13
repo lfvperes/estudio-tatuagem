@@ -29,7 +29,8 @@ agendamento, então o serviço continua válido. O professor não exige
 `shared_ptr`, e `unique_ptr` expressa a posse única no próprio tipo.
 
 **Consequência.** `Agendamento` não é copiável, apenas movível. Funciona
-normalmente em `vector<Agendamento>` e como retorno de função.
+normalmente em `vector<Agendamento>` e como retorno de função. O serviço é
+criado pelo menu e entregue pronto (entrada 11).
 
 **Revisitar se** outra classe passar a precisar do mesmo `Servico` (por
 exemplo, um `Retoque` que referencie a `Tatuagem` original).
@@ -111,8 +112,8 @@ estado no `Agendamento`.
 **Motivo.** Mais simples, e uma classe `Pagamento` não traria conceitos de
 POO que as outras partes já não pratiquem (composição, associação).
 
-**Pendente.** Definir se pagar duas vezes ou pagar agendamento cancelado
-lança exceção própria.
+**Resolvido.** Pagar duas vezes, ou pagar agendamento cancelado ou não
+confirmado, lança `EstudioException` (entradas 14 e 15).
 
 ## 6. `Especialidade`: `enum class` em header próprio
 
@@ -245,6 +246,140 @@ diferente a cada erro sem ler o texto.
 exigida e a fornecida (`Especialidade.hpp` já está na `main`) e montar a
 mensagem sozinha. Foi criada recebendo texto porque o header ainda não
 estava na `main`.
+
+## 10. Cliente e funcionário no `Agendamento`: referência por CPF
+
+**Contexto.** O `Agendamento` precisa saber quem é o cliente e quem é o
+funcionário. O diagrama inicial os ligava por associação direta.
+
+**Alternativas.**
+- Guardar cópias de `Cliente` e `Funcionario`: duplica dados, que ficariam
+  desatualizados.
+- `shared_ptr` nos dois lados: dá acesso direto, mas traz contagem de
+  referências, risco de ciclo e semântica de remoção menos óbvia.
+- Guardar só o CPF (`cpfCliente_`, `cpfFuncionario_`) e buscar a pessoa no
+  `Estudio`.
+
+**Decisão.** `Agendamento` guarda os CPFs como `std::string`. O `Estudio`
+guarda `std::map` por CPF para clientes e funcionários, no lugar de
+`vector`.
+
+**Motivo.** É a opção mais simples e deixa claro quem é dono de cada objeto
+(o `Estudio`). A busca por CPF no `map` é direta. Checar se os CPFs existem
+é responsabilidade do `Estudio`, não do `Agendamento`.
+
+**Revisitar se** o `Agendamento` precisar chamar métodos de `Cliente` ou
+`Funcionario` com frequência.
+
+## 11. O menu cria o `Servico` e o `Estudio` o entrega ao `Agendamento`
+
+**Contexto.** Como `Servico` é abstrato, alguém precisa decidir o tipo
+concreto e coletar seus dados (tamanho, joia, etc.).
+
+**Decisão.** O menu cria o serviço (`std::make_unique<Tatuagem>(...)`, etc.).
+O `Estudio` recebe o `unique_ptr<Servico>` pronto e o repassa ao construtor
+do `Agendamento` com `std::move`.
+
+**Motivo.** Só o menu conhece a escolha do usuário, e o `Estudio` não
+precisa saber os tipos concretos (consistente com a entrada 4).
+
+**Consequência.** Se o construtor lançar `DadoInvalidoException` (por
+exemplo, data inválida), o serviço é destruído junto, sem vazamento, graças
+ao `unique_ptr`. O menu deve recriar o serviço se o usuário digitar a data
+de novo.
+
+## 12. `Status` com três valores e `pago_` separado
+
+**Contexto.** O agendamento passa por etapas, e o pagamento é um fato à
+parte (entrada 5).
+
+**Alternativas.** Um estado único com `Pago` incluso, ou estados adicionais
+como `Concluido` e `NaoCompareceu`.
+
+**Decisão.** `enum class Status { Agendado, Confirmado, Cancelado }`, com
+`Agendado` como estado inicial, e `pago_` como `bool` independente. Não há
+cancelamento automático por falta de confirmação.
+
+**Motivo.** Misturar pagamento e confirmação num só estado obrigaria
+combinações como "confirmado e pago". Manter `pago_` à parte evita isso.
+Três valores bastam para as regras atuais.
+
+**Limitação aceita.** É possível cancelar um agendamento já pago. O estado
+resultante (cancelado e pago) não tem noção de reembolso.
+
+## 13. `dataHora_` como texto validado e prazo de 24h
+
+**Contexto.** O agendamento precisa de data e hora, e o cancelamento depende
+de comparar com "agora".
+
+**Alternativas.**
+- Guardar `std::time_t` ou `std::tm`: facilita contas, mas complica exibir e
+  comparar igualdade exata (usada para `HorarioIndisponivel`).
+- Guardar texto sem validar: aceitaria qualquer coisa.
+
+**Decisão.** `dataHora_` é `std::string` no formato fixo
+`AAAA-MM-DD HH:MM`. O construtor valida e lança `DadoInvalidoException`
+quando: o tamanho é diferente de 16, o formato não é aceito por
+`std::get_time`, sobra texto depois da data, ou a data não existe (por
+exemplo 31/02, detectada comparando dia e mês antes e depois de
+`std::mktime`). A conversão para `time_t` fica numa função livre no `.cpp`
+e é refeita sempre que necessária.
+
+O prazo de cancelamento é de 24 horas (constante `PRAZO_CANCELAMENTO`),
+comparado com o relógio do sistema (`std::time(nullptr)`), sem parâmetro em
+`cancelar()`. Cancelar com 24h ou mais de antecedência é permitido.
+
+**Motivo.** O texto valida na entrada e mantém a igualdade exata simples. O
+relógio do sistema evita um parâmetro que só serviria para testes: uma data
+em 2099 está sempre dentro do prazo, e uma de 2000 sempre fora.
+
+**Limitações aceitas.**
+- `mktime` usa o fuso local do sistema; horário de verão não é tratado.
+- A duração do serviço não entra em nenhuma checagem de horário.
+
+**Revisitar se** a conversão passar a ser usada em muitos pontos: aí vale
+guardar o `time_t` como atributo.
+
+## 14. Transições inválidas lançam `EstudioException`
+
+**Contexto.** `confirmar()`, `cancelar()` e `pagar()` só valem em certos
+estados.
+
+**Alternativas.** Uma exceção nova (por exemplo,
+`TransicaoInvalidaException`) ou a base `EstudioException`.
+
+**Decisão.** Transição inválida lança a `EstudioException` base, com
+mensagem clara. As regras:
+- `confirmar()`: só se `Agendado`.
+- `cancelar()`: só se `Agendado` ou `Confirmado`; já cancelado lança
+  `EstudioException`; menos de 24h lança `CancelamentoForaDoPrazoException`.
+- `pagar()`: só se `Confirmado` e ainda não pago.
+
+**Motivo.** Evita mais uma classe de exceção sem ganho para o menu atual,
+que apenas mostra a mensagem.
+
+**Revisitar se** o menu precisar tratar esse caso separadamente.
+
+## 15. `pagar()` exige confirmação
+
+**Decisão.** `pagar()` não confirma implicitamente. Pagar um agendamento só
+agendado, cancelado ou já pago lança `EstudioException`. O valor vem de
+`getServico().calcularPreco()`.
+
+**Motivo.** Pagamento e confirmação são ações distintas do domínio, e um
+setter simples (`setPago`) perderia a proteção do estado.
+
+## 16. Conflito de horário (no `Estudio`)
+
+**Contexto.** `HorarioIndisponivelException` é lançada pelo `Estudio`, não
+pelo `Agendamento`.
+
+**Decisão.** Igualdade exata da string `dataHora_`, valendo para o mesmo
+funcionário e também para o mesmo cliente. O formato fixo e validado
+(entrada 13) torna a comparação confiável.
+
+**Limitação aceita.** A duração do serviço não entra: dois agendamentos
+sobrepostos, mas com horários de início diferentes, não conflitam.
 
 ## Fora do escopo por ora
 
