@@ -1,8 +1,19 @@
 #include "Pessoa.hpp"
+#include "DadoInvalidoException.hpp"
 
-// Passagem de string por const reference, mantendo o padrão adotado no refactor do Luís
 Pessoa::Pessoa(const std::string& nome, const std::string& cpf) 
-    : nome_(nome), cpf_(cpf) {}
+    : nome_(nome), cpf_(cpf) {
+    
+    if (nome_.empty()) {
+        throw DadoInvalidoException("O nome não pode ser vazio.");
+    }
+    
+    // validação básica de tamanho de CPF (11 dígitos numéricos ou 14 com pontos e traço)
+    // Pode ajustar o tamanho conforme o padrão que adotar no terminal
+    if (cpf_.empty() || cpf_.length() < 11) {
+        throw DadoInvalidoException("CPF inválido. Insira um CPF válido.");
+    }
+}
 
 Pessoa::~Pessoa() {}
 
