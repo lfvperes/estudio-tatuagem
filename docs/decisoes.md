@@ -218,31 +218,32 @@ convém separar a formatação das classes de domínio.
 ## 9. Hierarquia de exceções e mensagens
 
 **Contexto.** O diagrama prevê `EstudioException` (derivada de
-`std::runtime_error`) e cinco filhas. Faltava definir quem escolhe o texto
-de cada erro.
+`std::runtime_error`) e quatro filhas. Faltava definir quem escolhe o texto
+de cada erro. O diagrama previa também `ClienteMenorDeIdadeException`, mas
+ela foi removida: usá-la exigiria alterar o diagrama e os atributos já
+implementados.
 
 **Alternativas.**
 - Todas as filhas recebem a mensagem de quem lança.
 - Todas têm mensagem fixa dentro da classe.
-- Mista: recebem a mensagem só as que se beneficiam de detalhe.
 
-**Decisão.** Mista. `HorarioIndisponivelException`,
+**Decisão.** `HorarioIndisponivelException`,
 `EspecialidadeIncompativelException`, `DadoInvalidoException` e
 `CancelamentoForaDoPrazoException` recebem `const std::string&` de quem
-lança. `ClienteMenorDeIdadeException` tem construtor sem parâmetro e
-mensagem fixa. As exceções não guardam a mensagem: ela fica no
-`std::runtime_error` e é lida com `what()`. Cada exceção tem seu `.hpp` e
-seu `.cpp`, como no resto do projeto.
+lança. As exceções não guardam a mensagem: ela fica no `std::runtime_error`
+e é lida com `what()`. Cada exceção tem seu `.hpp` e seu `.cpp`, como no
+resto do projeto.
 
-**Motivo.** Onde há dado concreto (qual horário, qual dado inválido, qual
-era o prazo), a mensagem de quem lança é mais útil ao usuário. Em
-`ClienteMenorDeIdadeException` o tipo já diz tudo. Os tipos separados deixam
-o `catch` reagir de forma diferente a cada erro sem ler o texto.
+**Motivo.** Em todas há dado concreto (qual horário, qual dado inválido,
+qual era o prazo, qual especialidade faltou), e a mensagem de quem lança é
+mais útil ao usuário. Os tipos separados deixam o `catch` reagir de forma
+diferente a cada erro sem ler o texto.
 
-**Revisitar se** `Especialidade` estiver na `main`:
+**Revisitar se** quiser padronizar o texto:
 `EspecialidadeIncompativelException` poderia receber a especialidade
-exigida e a fornecida e montar a mensagem sozinha. Hoje recebe texto para
-não depender de um header que ainda não está na `main`.
+exigida e a fornecida (`Especialidade.hpp` já está na `main`) e montar a
+mensagem sozinha. Foi criada recebendo texto porque o header ainda não
+estava na `main`.
 
 ## Fora do escopo por ora
 
