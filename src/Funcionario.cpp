@@ -1,8 +1,14 @@
 #include "Funcionario.hpp"
+#include "DadoInvalidoException.hpp"
 #include <iostream>
 
 Funcionario::Funcionario(const std::string& nome, const std::string& cpf, Especialidade especialidade, double comissao)
-    : Pessoa(nome, cpf), especialidade_(especialidade), comissao_(comissao) {}
+    : Pessoa(nome, cpf), especialidade_(especialidade), comissao_(comissao) {
+    
+    if (comissao_ < 0.0 || comissao_ > 100.0) {
+        throw DadoInvalidoException("A comissão deve ser um valor entre 0 e 100.");
+    }
+}
 
 Especialidade Funcionario::getEspecialidade() const {
     return especialidade_;
