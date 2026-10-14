@@ -35,10 +35,10 @@ A IA é usada para:
 - **Tratamento de erros com exceções**: hierarquia própria de exceções
   derivada de `std::runtime_error`.
 
-Já estão implementadas as hierarquias de `Servico`, `Pessoa` e de exceções;
-faltam `Agendamento`, `Estudio` e o menu. O diagrama abaixo é o ponto de
-partida de design acordado pela dupla; ele pode e deve ser ajustado conforme
-o código for escrito.
+Já estão implementadas as hierarquias de `Servico`, `Pessoa` e de exceções,
+além do `Agendamento`; faltam `Estudio` e o menu. O diagrama abaixo é o ponto
+de partida de design acordado pela dupla; ele pode e deve ser ajustado
+conforme o código for escrito.
 
 ## Diagrama de classes
 
@@ -132,18 +132,35 @@ classDiagram
     Servico <|-- Retoque
 
     class Agendamento {
+        -string cpfCliente_
+        -string cpfFuncionario_
+        -unique_ptr~Servico~ servico_
         -string dataHora_
         -Status status_
         -bool pago_
-        -unique_ptr~Servico~ servico_
+        +getCpfCliente() string
+        +getCpfFuncionario() string
+        +getDataHora() string
+        +getStatus() Status
+        +isPago() bool
+        +getServico() Servico
         +confirmar() void
         +cancelar() void
         +pagar() void
     }
 
+    class Status {
+        <<enumeration>>
+        Agendado
+        Confirmado
+        Cancelado
+    }
+
+    Agendamento --> Status
+
     class Estudio {
-        -vector~Cliente~ clientes_
-        -vector~Funcionario~ funcionarios_
+        -map~string, Cliente~ clientes_
+        -map~string, Funcionario~ funcionarios_
         -vector~Agendamento~ agendamentos_
         +cadastrarCliente(Cliente) void
         +cadastrarFuncionario(Funcionario) void
@@ -152,8 +169,8 @@ classDiagram
         +agendamentosDoFuncionario(...) vector~Agendamento~
     }
 
-    Agendamento --> Cliente
-    Agendamento --> Funcionario
+    Agendamento ..> Cliente : referência por CPF
+    Agendamento ..> Funcionario : referência por CPF
     Agendamento *-- Servico : dono único
     Estudio --> Cliente
     Estudio --> Funcionario
@@ -283,7 +300,7 @@ git pull
 |--------|-------------|
 | `Servico` → `Tatuagem`, `Piercing`, `Retoque` | Luís |
 | `Pessoa` → `Cliente`, `Funcionario` | Miguel |
-| `Agendamento` | a definir |
+| `Agendamento` | Luís |
 | Exceções (`EstudioException` e derivadas) | Luís |
 | `Estudio` e menu | a definir (em dupla) |
 
