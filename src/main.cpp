@@ -11,9 +11,9 @@
 #include "Piercing.hpp"
 #include "Retoque.hpp"
 #include "EstudioException.hpp"
-#include "DadoInvalidoException.hpp" // <-- Header adicionado
+#include "DadoInvalidoException.hpp"
 
-// Função auxiliar para limpar o buffer do teclado
+// Função auxiliar para limpar o buffer do teclado (evita saltos no std::getline)
 void limparBuffer() {
     std::cin.clear();
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
@@ -78,6 +78,10 @@ int main() {
                     limparBuffer();
                     throw DadoInvalidoException("Entrada inválida. Digite um número para a especialidade.");
                 }
+                // Nova validação de intervalo
+                if (espOpcao != 1 && espOpcao != 2) {
+                    throw DadoInvalidoException("Opção de especialidade inválida. Escolha 1 ou 2.");
+                }
                 
                 std::cout << "Comissão (%): ";
                 if (!(std::cin >> comissao)) {
@@ -126,11 +130,19 @@ int main() {
                         limparBuffer();
                         throw DadoInvalidoException("Entrada inválida. Digite um número para o tamanho.");
                     }
+                    // Nova validação de intervalo
+                    if (tamOpcao < 0 || tamOpcao > 2) {
+                        throw DadoInvalidoException("Opção de tamanho inválida. Escolha 0, 1 ou 2.");
+                    }
                     
                     std::cout << "Complexidade (0 - Baixa, 1 - Média, 2 - Alta): ";
                     if (!(std::cin >> compOpcao)) {
                         limparBuffer();
                         throw DadoInvalidoException("Entrada inválida. Digite um número para a complexidade.");
+                    }
+                    // Nova validação de intervalo
+                    if (compOpcao < 0 || compOpcao > 2) {
+                        throw DadoInvalidoException("Opção de complexidade inválida. Escolha 0, 1 ou 2.");
                     }
                     limparBuffer();
                     
