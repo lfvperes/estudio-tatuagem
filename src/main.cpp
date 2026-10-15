@@ -30,6 +30,16 @@ void exibirMenu() {
     std::cout << "Escolha uma opção: ";
 }
 
+// Função auxiliar para converter o enum Status num texto legível para o utilizador
+static std::string statusParaString(Status status) {
+    switch (status) {
+        case Status::Agendado: return "Agendado";
+        case Status::Confirmado: return "Confirmado";
+        case Status::Cancelado: return "Cancelado";
+    }
+    return "?";
+}
+
 int main() {
     Estudio estudio;
     int opcao = -1;
@@ -200,7 +210,7 @@ int main() {
                     std::cout << "\n--- Agendamentos Encontrados ---\n";
                     for (const Agendamento* ag : lista) {
                         std::cout << "Data: " << ag->getDataHora() 
-                                  << " | Status: " << (int)ag->getStatus()
+                                  << " | Status: " << statusParaString(ag->getStatus())
                                   << " | Detalhes: " << ag->getServico().detalhes() 
                                   << " | Preço: " << ag->getServico().calcularPreco() << "\n";
                     }
