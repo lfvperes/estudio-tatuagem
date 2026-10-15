@@ -35,13 +35,22 @@ int main() {
 
     while (opcao != 0) {
         exibirMenu();
+        
+        // Tenta ler a opção
         if (!(std::cin >> opcao)) {
+            // Deteta se o utilizador forçou a saída (Ctrl+D / EOF)
+            if (std::cin.eof()) {
+                std::cout << "\nFim de entrada detetado. A sair...\n";
+                break; // Sai do loop imediatamente
+            }
+            
+            // Se não foi EOF, foi alguém que digitou uma letra no lugar de um número
             limparBuffer();
             std::cout << "Entrada inválida. Tente novamente.\n";
             continue;
         }
         limparBuffer(); // Limpa o '\n' que sobrou do cin >> opcao
-
+        
         try {
             if (opcao == 1) {
                 std::string nome, cpf, observacoes;
