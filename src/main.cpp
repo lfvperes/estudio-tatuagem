@@ -11,8 +11,9 @@
 #include "Piercing.hpp"
 #include "Retoque.hpp"
 #include "EstudioException.hpp"
+#include "DadoInvalidoException.hpp" // <-- Header adicionado
 
-// Função auxiliar para limpar o buffer do teclado (evita saltos no std::getline)
+// Função auxiliar para limpar o buffer do teclado
 void limparBuffer() {
     std::cin.clear();
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
@@ -36,20 +37,17 @@ int main() {
     while (opcao != 0) {
         exibirMenu();
         
-        // Tenta ler a opção
+        // Tenta ler a opção do menu
         if (!(std::cin >> opcao)) {
-            // Deteta se o utilizador forçou a saída (Ctrl+D / EOF)
             if (std::cin.eof()) {
                 std::cout << "\nFim de entrada detetado. A sair...\n";
-                break; // Sai do loop imediatamente
+                break;
             }
-            
-            // Se não foi EOF, foi alguém que digitou uma letra no lugar de um número
             limparBuffer();
             std::cout << "Entrada inválida. Tente novamente.\n";
             continue;
         }
-        limparBuffer(); // Limpa o '\n' que sobrou do cin >> opcao
+        limparBuffer(); 
         
         try {
             if (opcao == 1) {
@@ -74,10 +72,18 @@ int main() {
                 std::getline(std::cin, nome);
                 std::cout << "CPF: ";
                 std::getline(std::cin, cpf);
+                
                 std::cout << "Especialidade (1 - Tatuagem, 2 - Piercing): ";
-                std::cin >> espOpcao;
+                if (!(std::cin >> espOpcao)) {
+                    limparBuffer();
+                    throw DadoInvalidoException("Entrada inválida. Digite um número para a especialidade.");
+                }
+                
                 std::cout << "Comissão (%): ";
-                std::cin >> comissao;
+                if (!(std::cin >> comissao)) {
+                    limparBuffer();
+                    throw DadoInvalidoException("Entrada inválida. Digite um número para a comissão.");
+                }
                 limparBuffer();
 
                 Especialidade esp = (espOpcao == 2) ? Especialidade::Piercing : Especialidade::Tatuagem;
@@ -97,9 +103,16 @@ int main() {
                 std::getline(std::cin, dataHora);
 
                 std::cout << "Tipo de Serviço (1 - Tatuagem, 2 - Piercing, 3 - Retoque): ";
-                std::cin >> tipoServico;
+                if (!(std::cin >> tipoServico)) {
+                    limparBuffer();
+                    throw DadoInvalidoException("Entrada inválida. Digite um número para o tipo de serviço.");
+                }
+                
                 std::cout << "Duração (minutos): ";
-                std::cin >> duracao;
+                if (!(std::cin >> duracao)) {
+                    limparBuffer();
+                    throw DadoInvalidoException("Entrada inválida. Digite um número para a duração.");
+                }
                 limparBuffer();
 
                 std::unique_ptr<Servico> servico;
@@ -107,11 +120,20 @@ int main() {
                 if (tipoServico == 1) {
                     int tamOpcao, compOpcao;
                     std::string descricao;
+                    
                     std::cout << "Tamanho (0 - Pequena, 1 - Média, 2 - Grande): ";
-                    std::cin >> tamOpcao;
+                    if (!(std::cin >> tamOpcao)) {
+                        limparBuffer();
+                        throw DadoInvalidoException("Entrada inválida. Digite um número para o tamanho.");
+                    }
+                    
                     std::cout << "Complexidade (0 - Baixa, 1 - Média, 2 - Alta): ";
-                    std::cin >> compOpcao;
+                    if (!(std::cin >> compOpcao)) {
+                        limparBuffer();
+                        throw DadoInvalidoException("Entrada inválida. Digite um número para a complexidade.");
+                    }
                     limparBuffer();
+                    
                     std::cout << "Descrição: ";
                     std::getline(std::cin, descricao);
 
@@ -122,10 +144,15 @@ int main() {
                 } else if (tipoServico == 2) {
                     std::string tipoJoia;
                     double precoJoia;
+                    
                     std::cout << "Tipo da Joia: ";
                     std::getline(std::cin, tipoJoia);
+                    
                     std::cout << "Preço da Joia: ";
-                    std::cin >> precoJoia;
+                    if (!(std::cin >> precoJoia)) {
+                        limparBuffer();
+                        throw DadoInvalidoException("Entrada inválida. Digite um número para o preço.");
+                    }
                     limparBuffer();
 
                     servico = std::make_unique<Piercing>(duracao, tipoJoia, precoJoia);
@@ -143,7 +170,6 @@ int main() {
                     continue;
                 }
 
-                // O std::move transfere a posse do ponteiro único para o Estudio e, subsequentemente, para o Agendamento
                 estudio.agendar(cpfC, cpfF, dataHora, std::move(servico));
                 std::cout << "Agendamento realizado com sucesso!\n";
 
@@ -172,14 +198,12 @@ int main() {
             }
             
         } catch (const EstudioException& e) {
-            // Captura qualquer exceção do sistema (HorarioIndisponivel, DadoInvalido, etc.)
             std::cout << "\n[ERRO DE SISTEMA] " << e.what() << "\n";
         } catch (const std::exception& e) {
-            // Captura erros padrão do C++
             std::cout << "\n[ERRO DESCONHECIDO] " << e.what() << "\n";
         }
     }
-
+    
     std::cout << "Encerrando o sistema...\n";
     return 0;
 }
