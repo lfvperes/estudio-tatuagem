@@ -384,3 +384,11 @@ sobrepostos, mas com horários de início diferentes, não conflitam.
 ## Fora do escopo por ora
 
 - Forma de pagamento (dinheiro, Pix, cartão) e pagamento parcial.
+
+## 17. Modificação de estado do agendamento pelo menu
+
+**Contexto.** A classe `Agendamento` possui os métodos `confirmar()`, `cancelar()` e `pagar()`, que inclusive validam prazos e lançam exceções. No entanto, o menu atual não oferece opções para interagir com esses métodos.
+
+**Decisão.** A interação com a mudança de estado dos agendamentos via terminal fica **fora do escopo** da entrega atual. 
+
+**Motivo.** Para o menu conseguir alterar um agendamento, seria necessário introduzir o conceito de identificador único (ID) para cada agendamento (ou realizar uma busca composta por CPF + Data), além de criar métodos intermediários na classe `Estudio` e expandir consideravelmente o `main.cpp`. O objetivo principal da disciplina (aplicar conceitos fundamentais de POO) já foi atingido, e a lógica de transição de estados e exceções já está implementada e protegida a nível de domínio na classe `Agendamento`, mesmo que não seja chamada pela interface atual.

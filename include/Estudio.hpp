@@ -32,7 +32,9 @@ class Estudio {
         void agendar(const std::string& cpfCliente, const std::string& cpfFuncionario, 
                      const std::string& dataHora, std::unique_ptr<Servico> servico);
         
-        // Retornam vetores de ponteiros para evitar cópias indevidas do Agendamento
+        // AVISO: Os ponteiros retornados apontam diretamente para os elementos do 
+        // vector interno. Como um novo agendamento pode causar a realocação do vector,
+        // os ponteiros desta lista só são válidos até a próxima chamada de agendar().
         std::vector<const Agendamento*> agendamentosDoCliente(const std::string& cpfCliente) const;
         std::vector<const Agendamento*> agendamentosDoFuncionario(const std::string& cpfFuncionario) const;
 };
