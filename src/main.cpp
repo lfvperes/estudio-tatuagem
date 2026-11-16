@@ -64,7 +64,7 @@ int main() {
                 std::string nome, cpf, observacoes;
                 std::cout << "Nome do Cliente: ";
                 std::getline(std::cin, nome);
-                std::cout << "CPF: ";
+                std::cout << "CPF (11 dígitos, apenas números): ";
                 std::getline(std::cin, cpf);
                 std::cout << "Alergias/Observações (opcional): ";
                 std::getline(std::cin, observacoes);
@@ -80,7 +80,7 @@ int main() {
 
                 std::cout << "Nome do Funcionário: ";
                 std::getline(std::cin, nome);
-                std::cout << "CPF: ";
+                std::cout << "CPF (11 dígitos, apenas números): ";
                 std::getline(std::cin, cpf);
                 
                 std::cout << "Especialidade (1 - Tatuagem, 2 - Piercing): ";
@@ -109,9 +109,9 @@ int main() {
                 std::string cpfC, cpfF, dataHora;
                 int tipoServico, duracao;
 
-                std::cout << "CPF do Cliente: ";
+                std::cout << "CPF do Cliente (11 dígitos, apenas números): ";
                 std::getline(std::cin, cpfC);
-                std::cout << "CPF do Funcionário: ";
+                std::cout << "CPF do Funcionário (11 dígitos, apenas números): ";
                 std::getline(std::cin, cpfF);
                 std::cout << "Data e Hora (AAAA-MM-DD HH:MM): ";
                 std::getline(std::cin, dataHora);
@@ -197,7 +197,7 @@ int main() {
 
             } else if (opcao == 4 || opcao == 5) {
                 std::string cpf;
-                std::cout << "Informe o CPF: ";
+                std::cout << "Informe o CPF (11 dígitos, apenas números): ";
                 std::getline(std::cin, cpf);
 
                 std::vector<const Agendamento*> lista = (opcao == 4) 
