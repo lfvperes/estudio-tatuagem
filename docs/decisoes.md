@@ -448,8 +448,17 @@ observações, descrição, joia) quebraria a leitura do CSV (entrada 18).
 `Tatuagem` e `Piercing`) lançam `DadoInvalidoException` se o texto contiver
 `;` ou quebra de linha.
 
+A checagem fica numa função só, `UtilsCsv::validarTextoLivre(texto,
+nomeDoCampo)`, que os construtores chamam. O separador é a constante
+`UtilsCsv::SEPARADOR`, usada também pelo código de persistência. O `\r` não
+é recusado na entrada: ele vem de arquivos editados no Windows (linhas
+terminadas em `\r\n`) e é removido na leitura por
+`UtilsCsv::limparRetornoDeCarro`.
+
 **Motivo.** A validação fica onde os outros dados já são validados, e o
-arquivo nunca recebe um texto que não consiga ler de volta.
+arquivo nunca recebe um texto que não consiga ler de volta. A função e a
+constante compartilhadas evitam repetir a regra em cada construtor: mudar o
+separador muda um lugar só.
 
 ## 20. Serviço polimórfico no CSV
 
@@ -559,6 +568,35 @@ não foi salvo. O auto-save reduzirá essa perda.
 
 **Revisitar com o auto-save:** salvar num arquivo temporário e renomeá-lo,
 para que um travamento no meio da escrita não corrompa os dados.
+
+## 24. Formato do CPF: exatamente 11 dígitos
+
+**Contexto.** O construtor de `Pessoa` aceitava qualquer texto com 11
+caracteres ou mais. Assim, `12345678901` e `123.456.789-01` viravam duas
+pessoas diferentes, pois o CPF é a chave dos `map`s do `Estudio` (entrada
+10), e um agendamento digitado no outro formato não encontrava o cliente.
+O CPF também é gravado no CSV e não pode conter o separador (entrada 19).
+
+**Alternativas.**
+- Aceitar com ou sem formatação, guardando como digitado: mantém as chaves
+  duplicadas.
+- Aceitar com ou sem formatação e normalizar (remover `.` e `-`) antes de
+  guardar.
+- Aceitar apenas 11 dígitos.
+
+**Decisão.** O construtor de `Pessoa` lança `DadoInvalidoException` se o
+CPF não tiver exatamente 11 caracteres ou se contiver algo além de dígitos.
+O menu informa o formato esperado em todos os pedidos de CPF.
+
+**Motivo.** Uma única forma válida garante que a mesma pessoa tenha sempre a
+mesma chave no `map` e no arquivo. É a opção mais simples, e só dígitos
+também impede o separador do CSV sem uma checagem à parte.
+
+**Limitação aceita.** Os dígitos verificadores não são conferidos: qualquer
+sequência de 11 dígitos é aceita.
+
+**Revisitar se** for preciso aceitar o CPF formatado: aí a normalização
+entra antes da validação, e as chaves continuam únicas.
 
 ## Fora do escopo por ora
 
