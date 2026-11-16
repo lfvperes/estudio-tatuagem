@@ -1,5 +1,6 @@
 #include "Servico.hpp"
 #include "DadoInvalidoException.hpp"
+#include "UtilsCsv.hpp"
 
 Servico::Servico(int duracaoMinutos, Especialidade especialidade, double taxaMaoDeObra, double taxaFixaSessao) : duracaoMinutos_(duracaoMinutos), especialidade_(especialidade), taxaMaoDeObra_(taxaMaoDeObra), taxaFixaSessao_(taxaFixaSessao) {
     if (duracaoMinutos <= 0) {
@@ -27,4 +28,9 @@ double Servico::getTaxaFixaSessao() const {
 
 std::string Servico::detalhes() const {
     return std::to_string(duracaoMinutos_) + " min";
+}
+
+std::string Servico::gerarCSV() const {
+    // Retorna apenas a parte comum: a duração
+    return std::to_string(duracaoMinutos_);
 }

@@ -1,4 +1,5 @@
 #include "Retoque.hpp"
+#include "UtilsCsv.hpp"
 
 constexpr double TAXA_FIXA_SESSAO = 30;
 constexpr double TAXA_MAO_DE_OBRA = 40;
@@ -25,5 +26,7 @@ std::string Retoque::detalhes() const {
 std::string Retoque::gerarCSV() const {
     // Decisão 18: Bools gravados como sim/nao
     std::string feitaStr = feitaNoEstudio_ ? "sim" : "nao";
-    return "Retoque;" + std::to_string(getDuracaoMinutos()) + ";" + feitaStr;
+    return std::string("Retoque") + UtilsCsv::SEPARADOR
+         + Servico::gerarCSV() + UtilsCsv::SEPARADOR
+         + feitaStr;
 }

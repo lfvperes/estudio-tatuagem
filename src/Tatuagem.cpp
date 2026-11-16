@@ -84,5 +84,9 @@ std::string Tatuagem::gerarCSV() const {
     std::string compStr = (complexidade_ == Complexidade::Baixa) ? "Baixa" : 
                           (complexidade_ == Complexidade::Media) ? "Media" : "Alta";
 
-    return "Tatuagem;" + std::to_string(getDuracaoMinutos()) + ";" + tamStr + ";" + compStr + ";" + descricao_;
+    return std::string("Tatuagem") + UtilsCsv::SEPARADOR
+         + Servico::gerarCSV() + UtilsCsv::SEPARADOR
+         + tamStr + UtilsCsv::SEPARADOR
+         + compStr + UtilsCsv::SEPARADOR
+         + descricao_;
 }
