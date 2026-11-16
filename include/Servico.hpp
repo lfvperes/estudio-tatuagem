@@ -11,6 +11,8 @@ class Servico {
         double taxaMaoDeObra_;
         double taxaFixaSessao_;
     public:
+    // Gera a string formatada com os dados do serviço para o CSV (Decisão 20)
+        virtual std::string gerarCSV() const = 0;
         Servico(int duracaoMinutos, Especialidade especialidade, double taxaMaoDeObra, double taxaFixaSessao);
         virtual ~Servico();
         int getDuracaoMinutos() const;

@@ -12,6 +12,7 @@ class Piercing : public Servico {
         Piercing(int duracaoMinutos, const std::string& tipoJoia, double precoJoia);
         double calcularPreco() const override;
         std::string detalhes() const override;
+        std::string gerarCSV() const override;
 };
 
 

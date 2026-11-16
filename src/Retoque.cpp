@@ -21,3 +21,9 @@ double Retoque::calcularPreco() const {
 std::string Retoque::detalhes() const {
     return "Retoque (feita " + std::string(feitaNoEstudio_ ? "no" : "fora do") + " estúdio, " + Servico::detalhes() + ")";
 }
+
+std::string Retoque::gerarCSV() const {
+    // Decisão 18: Bools gravados como sim/nao
+    std::string feitaStr = feitaNoEstudio_ ? "sim" : "nao";
+    return "Retoque;" + std::to_string(getDuracaoMinutos()) + ";" + feitaStr;
+}

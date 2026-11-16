@@ -17,6 +17,7 @@ class Tatuagem : public Servico {
         double calcularPreco() const override;
         std::string getDescricao() const;
         std::string detalhes() const override;
+        std::string gerarCSV() const override;
 };
 
 

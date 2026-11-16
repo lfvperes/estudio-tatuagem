@@ -18,3 +18,7 @@ double Piercing::calcularPreco() const {
 std::string Piercing::detalhes() const {
     return "Piercing (" + tipoJoia_ + ", " + Servico::detalhes() + ")";
 }
+
+std::string Piercing::gerarCSV() const {
+    return "Piercing;" + std::to_string(getDuracaoMinutos()) + ";" + tipoJoia_ + ";" + std::to_string(precoJoia_);
+}

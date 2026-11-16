@@ -13,6 +13,7 @@ class Retoque : public Servico {
         double calcularPreco() const override;
         bool isFeitaNoEstudio() const;
         std::string detalhes() const override;
+        std::string gerarCSV() const override;
 };
 
 #endif // RETOQUE_HPP
