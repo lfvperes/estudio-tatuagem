@@ -381,10 +381,6 @@ funcionário e também para o mesmo cliente. O formato fixo e validado
 **Limitação aceita.** A duração do serviço não entra: dois agendamentos
 sobrepostos, mas com horários de início diferentes, não conflitam.
 
-## Fora do escopo por ora
-
-- Forma de pagamento (dinheiro, Pix, cartão) e pagamento parcial.
-
 ## 17. Modificação de estado do agendamento pelo menu
 
 **Contexto.** A classe `Agendamento` possui os métodos `confirmar()`, `cancelar()` e `pagar()`, que inclusive validam prazos e lançam exceções. No entanto, o menu atual não oferece opções para interagir com esses métodos.
@@ -392,3 +388,178 @@ sobrepostos, mas com horários de início diferentes, não conflitam.
 **Decisão.** A interação com a mudança de estado dos agendamentos via terminal fica **fora do escopo** da entrega atual. 
 
 **Motivo.** Para o menu conseguir alterar um agendamento, seria necessário introduzir o conceito de identificador único (ID) para cada agendamento (ou realizar uma busca composta por CPF + Data), além de criar métodos intermediários na classe `Estudio` e expandir consideravelmente o `main.cpp`. O objetivo principal da disciplina (aplicar conceitos fundamentais de POO) já foi atingido, e a lógica de transição de estados e exceções já está implementada e protegida a nível de domínio na classe `Agendamento`, mesmo que não seja chamada pela interface atual.
+
+## 18. Persistência em arquivos CSV
+
+**Contexto.** A segunda parte do trabalho exige salvar os dados na saída e
+carregá-los na volta, sem banco de dados.
+
+**Alternativas.**
+- JSON: exige uma biblioteca externa ou um parser escrito à mão.
+- CSV num único arquivo: as linhas teriam colunas diferentes conforme a
+  entidade.
+- CSV com um arquivo por entidade.
+
+**Decisão.**
+- Três arquivos, `clientes.csv`, `funcionarios.csv` e `agendamentos.csv`, na
+  pasta `dados/`. A primeira linha de cada arquivo é o cabeçalho das
+  colunas.
+- O separador é `;`.
+- Enums e `bool` são gravados como texto: `Confirmado`, `Grande`,
+  `Tatuagem`, `sim`/`nao`. O texto usa o nome do enumerador, sem acento
+  (`Media`, não `Média`).
+- O `Estudio` é responsável por salvar e carregar (`salvar()` e
+  `carregar()`). Ele cria a pasta `dados/` pelo código
+  (`std::filesystem::create_directories`) se ela não existir.
+- A carga segue a ordem clientes, funcionários e agendamentos, pois os
+  agendamentos referenciam CPFs das duas primeiras.
+
+**Motivo.**
+- CSV não exige dependências, e o Makefile não muda.
+- Um arquivo por entidade dá colunas fixas a cada um, e a leitura fica
+  simples.
+- O `;` evita conflito com vírgulas em descrições e observações.
+- Enums como texto deixam o arquivo legível e não quebram se a ordem dos
+  enumeradores mudar no código, o que aconteceria com números.
+- Sem a criação pelo código, um `std::ofstream` numa pasta inexistente
+  falha sem lançar exceção, e o salvamento não faria nada sem avisar.
+
+**Consequências.**
+- `dados/` vai para o `.gitignore`, como o `build/`.
+- `std::filesystem` exige um compilador recente. No Windows, use o WSL; o
+  MinGW 6.3 não o tem.
+
+**Revisitar se** a carga e o salvamento crescerem a ponto de tirar o foco do
+`Estudio` nas regras de negócio: aí vale uma classe própria de persistência.
+
+## 19. Textos não podem conter o separador
+
+**Contexto.** Um `;` ou uma quebra de linha dentro de um texto (nome,
+observações, descrição, joia) quebraria a leitura do CSV (entrada 18).
+
+**Alternativas.**
+- Usar aspas e escape, como no CSV completo: o parser fica bem mais
+  complexo.
+- Trocar o caractere ao salvar: o dado salvo deixa de ser o que foi
+  digitado.
+- Recusar o caractere na entrada.
+
+**Decisão.** Os construtores que recebem texto livre (`Pessoa`, `Cliente`,
+`Tatuagem` e `Piercing`) lançam `DadoInvalidoException` se o texto contiver
+`;` ou quebra de linha.
+
+**Motivo.** A validação fica onde os outros dados já são validados, e o
+arquivo nunca recebe um texto que não consiga ler de volta.
+
+## 20. Serviço polimórfico no CSV
+
+**Contexto.** Cada linha de `agendamentos.csv` guarda um serviço de tipo
+concreto desconhecido para o `Estudio`, com campos que variam conforme o
+tipo.
+
+**Alternativas.**
+- O `Estudio` descobrir o tipo e ler os atributos de cada filha: descartada
+  nas entradas 4 e 8.
+- Método virtual em `Servico` para gravar e uma função fábrica para ler.
+
+**Decisão.**
+- Cada linha traz os dados do agendamento, seguidos de uma tag de tipo
+  (`Tatuagem`, `Piercing` ou `Retoque`) e dos campos do serviço. Por
+  exemplo:
+  `cpfCliente;cpfFuncionario;dataHora;status;pago;Tatuagem;120;Grande;Alta;descrição`
+- **Escrita:** um método virtual em `Servico`, no mesmo modelo de
+  `detalhes()` (entrada 8), devolve o texto do serviço. A implementação da
+  base cuida da parte comum, e cada filha escreve a tag e os próprios
+  campos.
+- **Leitura:** uma função fábrica, em arquivo próprio, recebe a tag e os
+  campos e devolve `std::unique_ptr<Servico>` com o tipo concreto certo.
+  Tag desconhecida lança exceção.
+
+**Motivo.**
+- A escrita usa polimorfismo, e o `Estudio` não precisa conhecer os
+  atributos das filhas.
+- A leitura não tem como usar polimorfismo, pois o objeto ainda não existe.
+  Alguém precisa decidir o tipo pela tag, e a fábrica concentra essa decisão
+  num único lugar fora do `Estudio`, que continua sem conhecer os tipos
+  concretos (entrada 11).
+
+**Revisitar se** o menu passar a usar a mesma fábrica para criar o serviço:
+os dois caminhos ficariam unificados.
+
+## 21. Restaurar o estado do `Agendamento` na carga
+
+**Contexto.** O construtor do `Agendamento` sempre começa com `Agendado` e
+não pago. Reaplicar as transições não funciona: um agendamento cancelado no
+passado, ao ser recarregado, chamaria `cancelar()`, que lança
+`CancelamentoForaDoPrazoException`.
+
+**Alternativas.**
+- Setters para `status_` e `pago_`: perdem a proteção de estado (entrada
+  15).
+- `friend class Estudio`: o `Estudio` passa a enxergar todo o privado do
+  `Agendamento`, que deixa de proteger o próprio estado.
+- Um segundo construtor que recebe `status` e `pago`.
+
+**Decisão.** Um segundo construtor recebe também `Status` e `pago`. Além da
+validação de data do primeiro, ele recusa com `DadoInvalidoException` as
+combinações que as regras de transição não alcançam: pago com status
+`Agendado` (entrada 15). Cancelado e pago continua aceito (limitação da
+entrada 12).
+
+**Motivo.** O custo é parecido com o do `friend`, mas a classe continua
+responsável pelas próprias regras mesmo quando é criada a partir de um
+arquivo. Um CSV editado à mão com um estado impossível é recusado.
+
+## 22. Erros e validações na carga
+
+**Contexto.** Os arquivos podem não existir (primeira execução) ou estar
+corrompidos (edição manual, linha incompleta).
+
+**Alternativas para arquivo corrompido.**
+- Ignorar a linha ruim: o salvamento da saída a apagaria sem aviso.
+- Descartar tudo e começar vazio: o salvamento da saída sobrescreveria os
+  dados bons.
+- Interromper a carga com mensagem clara.
+
+**Decisão.**
+- Arquivo inexistente não é erro: aquela entidade começa vazia. Cada arquivo
+  é tratado separadamente.
+- Arquivo corrompido lança `PersistenciaException`, nova filha de
+  `EstudioException`, com o nome do arquivo e o número da linha. A carga
+  captura as exceções dos construtores (`DadoInvalidoException`) e as relança
+  como `PersistenciaException`. Formato da linha (número de colunas, tag ou
+  texto de enum inválido) também lança a mesma exceção.
+- Se a carga falhar, o `main` mostra a mensagem e encerra **sem salvar**.
+- As validações do `agendar()` (CPFs existem, especialidade compatível,
+  conflito de horário) vão para um método privado do `Estudio`, chamado
+  tanto pelo `agendar()` quanto pela carga. A carga usa o segundo construtor
+  (entrada 21); o `agendar()` continua com o primeiro.
+
+**Motivo.**
+- Interromper é o único caminho que não perde dados, e é o mais simples:
+  não existe estado meio carregado.
+- O tipo próprio de exceção deixa o `main` distinguir um erro de
+  inicialização de um erro de digitação no menu.
+- O método privado evita código duplicado, e um agendamento impossível no
+  arquivo é barrado como seria no menu.
+
+## 23. Salvar na saída
+
+**Decisão.** O `main` chama `carregar()` ao iniciar e `salvar()` logo depois
+do laço do menu. O laço termina pela opção 0 ou pelo fim de entrada (EOF), e
+a chamada após o laço cobre os dois casos. Se o salvamento falhar, o erro é
+mostrado ao usuário.
+
+**Motivo.** Um único ponto de saída evita esquecer um dos caminhos. O
+salvamento num único método também prepara a etapa de threads: o auto-save
+só precisará chamar o mesmo `salvar()` periodicamente.
+
+**Limitação aceita.** Encerrar com Ctrl+C ou fechando o terminal perde o que
+não foi salvo. O auto-save reduzirá essa perda.
+
+**Revisitar com o auto-save:** salvar num arquivo temporário e renomeá-lo,
+para que um travamento no meio da escrita não corrompa os dados.
+
+## Fora do escopo por ora
+
+- Forma de pagamento (dinheiro, Pix, cartão) e pagamento parcial.
