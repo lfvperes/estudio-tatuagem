@@ -77,7 +77,7 @@ std::string Tatuagem::detalhes() const {
 }
 
 std::string Tatuagem::gerarCSV() const {
-    // Decisão 18: Enums gravados sem acentos e com o nome exato.
+    // enums gravados sem acentos e com o nome exato (entrada 18 de docs/decisoes.md)
     std::string tamStr = (tamanho_ == Tamanho::Pequena) ? "Pequena" : 
                          (tamanho_ == Tamanho::Media) ? "Media" : "Grande";
                          

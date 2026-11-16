@@ -24,7 +24,7 @@ std::string Retoque::detalhes() const {
 }
 
 std::string Retoque::gerarCSV() const {
-    // Decisão 18: Bools gravados como sim/nao
+    // bools gravados como sim/nao (entrada 18 de docs/decisoes.md)
     std::string feitaStr = feitaNoEstudio_ ? "sim" : "nao";
     return std::string("Retoque") + UtilsCsv::SEPARADOR
          + Servico::gerarCSV() + UtilsCsv::SEPARADOR
