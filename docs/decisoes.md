@@ -536,13 +536,16 @@ corrompidos (edição manual, linha incompleta).
 - Arquivo corrompido lança `PersistenciaException`, nova filha de
   `EstudioException`, com o nome do arquivo e o número da linha. A carga
   captura as exceções dos construtores (`DadoInvalidoException`) e as relança
-  como `PersistenciaException`. Formato da linha (número de colunas, tag ou
-  texto de enum inválido) também lança a mesma exceção.
+  como `PersistenciaException`. Formato da linha (número de colunas, tag,
+  texto de enum inválido ou número seguido de texto, como `60min`) também
+  lança a mesma exceção.
 - Se a carga falhar, o `main` mostra a mensagem e encerra **sem salvar**.
 - As validações do `agendar()` (CPFs existem, especialidade compatível,
   conflito de horário) vão para um método privado do `Estudio`, chamado
   tanto pelo `agendar()` quanto pela carga. A carga usa o segundo construtor
   (entrada 21); o `agendar()` continua com o primeiro.
+- Um agendamento lido como `Cancelado` passa pelas mesmas checagens, menos
+  a de conflito de horário.
 
 **Motivo.**
 - Interromper é o único caminho que não perde dados, e é o mais simples:
@@ -551,6 +554,9 @@ corrompidos (edição manual, linha incompleta).
   inicialização de um erro de digitação no menu.
 - O método privado evita código duplicado, e um agendamento impossível no
   arquivo é barrado como seria no menu.
+- Cancelado não ocupa horário (entrada 16). Sem a exceção, um cancelado
+  gravado depois de um ativo no mesmo horário seria recusado, embora os dois
+  possam conviver na agenda.
 
 ## 23. Salvar na saída
 
