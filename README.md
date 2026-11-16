@@ -35,10 +35,14 @@ A IA é usada para:
 - **Tratamento de erros com exceções**: hierarquia própria de exceções
   derivada de `std::runtime_error`.
 
-Já estão implementadas as hierarquias de `Servico`, `Pessoa` e de exceções,
-além do `Agendamento`; faltam `Estudio` e o menu. O diagrama abaixo é o ponto
-de partida de design acordado pela dupla; ele pode e deve ser ajustado
-conforme o código for escrito.
+Todas as classes do diagrama estão implementadas: as hierarquias de
+`Servico`, `Pessoa` e de exceções, o `Agendamento`, o `Estudio` e o menu
+interativo em `src/main.cpp`. O menu permite cadastrar clientes e
+funcionários, agendar serviços e listar os agendamentos de um cliente ou de
+um funcionário. Mudar o estado de um agendamento (confirmar, cancelar,
+pagar) pelo menu está fora do escopo da entrega atual (ver entrada 17 de
+[`docs/decisoes.md`](docs/decisoes.md)). O diagrama abaixo reflete o código
+atual, e as justificativas de design estão no registro de decisões.
 
 ## Diagrama de classes
 
@@ -48,17 +52,22 @@ classDiagram
         <<abstract>>
         -string nome_
         -string cpf_
+        +getNome() string
+        +getCpf() string
         +exibirInfo() void
     }
 
     class Cliente {
         -string alergiasObservacoes_
+        +getAlergiasObservacoes() string
         +exibirInfo() void
     }
 
     class Funcionario {
         -Especialidade especialidade_
         -double comissao_
+        +getEspecialidade() Especialidade
+        +getComissao() double
         +exibirInfo() void
     }
 
@@ -164,9 +173,9 @@ classDiagram
         -vector~Agendamento~ agendamentos_
         +cadastrarCliente(Cliente) void
         +cadastrarFuncionario(Funcionario) void
-        +agendar(...) Agendamento
-        +agendamentosDoCliente(...) vector~Agendamento~
-        +agendamentosDoFuncionario(...) vector~Agendamento~
+        +agendar(cpfCliente, cpfFuncionario, dataHora, unique_ptr~Servico~) void
+        +agendamentosDoCliente(cpfCliente) vector~const Agendamento*~
+        +agendamentosDoFuncionario(cpfFuncionario) vector~const Agendamento*~
     }
 
     Agendamento ..> Cliente : referência por CPF
@@ -195,8 +204,8 @@ classDiagram
 
 Requisitos: `g++` com suporte a C++17 e `make`.
 
-> O `src/main.cpp` ainda é um placeholder: o `make` gera o executável, mas
-> ele não faz nada até o `Estudio` e o menu serem escritos.
+O `make` gera o executável em `build/estudio-tatuagem`, e o `make run`
+compila e abre o menu interativo no terminal.
 
 ```bash
 make
@@ -218,6 +227,7 @@ make clean
 estudio-tatuagem/
 ├── include/     # Headers (.hpp) com as declarações das classes
 ├── src/         # Implementações (.cpp) e main.cpp
+├── docs/        # Registro de decisões de design (decisoes.md)
 ├── build/       # Artefatos de compilação (gerado pelo make, ignorado pelo git)
 ├── Makefile
 ├── .gitignore
@@ -302,7 +312,7 @@ git pull
 | `Pessoa` → `Cliente`, `Funcionario` | Miguel |
 | `Agendamento` | Luís |
 | Exceções (`EstudioException` e derivadas) | Luís |
-| `Estudio` e menu | a definir (em dupla) |
+| `Estudio` e menu | Miguel |
 
 ## Autores
 
