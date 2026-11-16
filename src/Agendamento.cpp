@@ -37,11 +37,29 @@ static std::time_t converterDataHora(const std::string& dataHora) {
     return dataConvertida;
 }
 
+// Construtor normal (usado pelo menu) delega a inicialização para o segundo construtor
+// std::move: o unique_ptr não pode ser copiado, então a posse do serviço
+// é repassada ao construtor completo
+Agendamento::Agendamento(const std::string& cpfCliente, const std::string& cpfFuncionario,
+                         const std::string& dataHora, std::unique_ptr<Servico> servico)
+    : Agendamento(cpfCliente, cpfFuncionario, dataHora, std::move(servico), Status::Agendado, false) {
+}
+
+// Construtor completo (usado pela persistência e referenciado pelo construtor acima)
 // std::move: o unique_ptr não pode ser copiado, então a posse do serviço
 // é transferida do parâmetro para o atributo
-Agendamento::Agendamento(const std::string& cpfCliente, const std::string& cpfFuncionario, const std::string& dataHora, std::unique_ptr<Servico> servico) : status_(Status::Agendado), pago_(false), cpfCliente_(cpfCliente), cpfFuncionario_(cpfFuncionario), dataHora_(dataHora), servico_(std::move(servico)) {
-    // apenas validar, sem usar o retorno
+Agendamento::Agendamento(const std::string& cpfCliente, const std::string& cpfFuncionario,
+                         const std::string& dataHora, std::unique_ptr<Servico> servico,
+                         Status status, bool pago)
+    : status_(status), pago_(pago), cpfCliente_(cpfCliente),
+      cpfFuncionario_(cpfFuncionario), dataHora_(dataHora), servico_(std::move(servico)) {
+    // Valida a data normalmente para não aceitar lixo
     (void)converterDataHora(dataHora);
+
+    // Valida estados impossíveis segundo as regras de transição da classe
+    if (status_ == Status::Agendado && pago_) {
+        throw DadoInvalidoException("O agendamento não pode estar 'Agendado' e 'Pago' simultaneamente.");
+    }
 }
 
 // confirma se agendado e nao confirmado nem cancelado
