@@ -747,6 +747,77 @@ mais novo de clientes só pode ter clientes a mais (o menu não remove
 ninguém), mas os agendamentos
 desde o último salvamento se perdem.
 
+## 29. Leitura de números com template
+
+**Contexto.** A parte 2 pede o uso de tipos genéricos, que em C++ são os
+templates. O `UtilsCsv` tem `extrairInt` e `extrairDouble`, duas funções
+quase iguais que leem um número de um campo do CSV e recusam texto depois
+dele (entrada 22). Elas são usadas pela `ServicoFactory` e pela carga da
+comissão.
+
+**Alternativas.**
+- Uma função genérica para exibir listas de clientes ou funcionários: o
+  menu não tem essa opção, e ela seria criada só para usar o template.
+- Uma classe `template <typename T> class Repositorio` que salva e carrega
+  qualquer entidade: cada entidade tem um formato de CSV diferente, e
+  `Agendamento` fica num `vector` porque só pode ser movido. O repositório
+  precisaria de uma regra por tipo e mexeria no `Estudio`, no mutex
+  (entrada 26) e na persistência, já revisados e testados.
+- Um template que substitui as duas funções de leitura.
+
+**Alternativas para o corpo do template.**
+- `if constexpr` escolhendo entre `stoi` e `stod`: mantém o comportamento
+  atual, mas o corpo continua com um caminho por tipo.
+- Especialização explícita para `int` e `double`: é o código atual com
+  outra sintaxe.
+- Ler com `std::istringstream >> valor`, que já sabe converter qualquer
+  tipo numérico.
+
+**Decisão.**
+- `extrairInt` e `extrairDouble` dão lugar a
+  `template <typename T> T extrair(const std::string& texto, const std::string& nomeCampo)`
+  no `UtilsCsv`. As chamadas passam a dizer o tipo: `extrair<int>(...)` e
+  `extrair<double>(...)`.
+- O corpo fica no `UtilsCsv.hpp`, e não no `.cpp`.
+- O corpo é um só para todos os tipos: lê com `std::istringstream >> valor`
+  e aceita o campo só se a leitura não falhou e o texto foi consumido
+  inteiro.
+- Um `static_assert(std::is_arithmetic_v<T>, ...)` faz o compilador
+  recusar com mensagem clara um tipo que não seja numérico, como
+  `extrair<std::string>` ou `extrair<Cliente>`.
+- Os três erros atuais (texto depois do número, campo não numérico e
+  número grande demais) viram uma única `DadoInvalidoException`, por
+  exemplo "O campo Duração não contém um número válido".
+
+**Motivo.**
+- O template elimina uma duplicação que já existe, em vez de criar código
+  novo só para usar o recurso.
+- O corpo precisa estar no `.hpp` porque o compilador só gera o código
+  quando vê o template sendo usado com um tipo concreto (`int`, `double`),
+  e para isso precisa do corpo inteiro. Com o corpo no `.cpp`, cada uso em
+  outro arquivo daria "undefined reference" no link.
+- O `istringstream` tem um corpo único de verdade, sem `if` por tipo, que é
+  o que mostra a utilidade do template. Ele também recusa `nan`, `inf` e
+  números fora do limite do tipo, que hoje dependem de outras checagens.
+- Sem o `static_assert`, o erro de um tipo errado apareceria no meio dos
+  detalhes internos do `istringstream`.
+- Uma mensagem só simplifica o código. Quem lê o erro na carga já recebe o
+  arquivo, a linha e o nome do campo (entrada 22).
+
+**Mudança de comportamento.** `nan` e `inf` passam a ser recusados já na
+leitura. Antes o `stod` os aceitava: o `nan` era barrado pelos construtores
+de `Piercing` e `Funcionario`, mas um preço de joia `inf` passava. Os demais casos continuam iguais: `60min`,
+`60.5` como `int`, espaço no fim e campo vazio são recusados; espaço no
+início e sinal `+` são aceitos.
+
+**Limitação aceita.** `std::is_arithmetic` também aceita `bool` e `char`.
+`extrair<char>` leria só o primeiro caractere, e não um número. Nenhuma
+chamada usa esses tipos.
+
+**Revisitar se** for preciso ler outro tipo de campo, como data ou enum:
+seria um template diferente, ou uma especialização, porque esses tipos não
+são numéricos.
+
 ## Fora do escopo por ora
 
 - Forma de pagamento (dinheiro, Pix, cartão) e pagamento parcial.
