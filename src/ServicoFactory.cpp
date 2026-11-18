@@ -16,7 +16,7 @@ namespace ServicoFactory {
                 throw DadoInvalidoException("Colunas insuficientes/excessivas para a tag Tatuagem (esperado 4).");
             }
 
-            int duracao = UtilsCsv::extrairInt(campos.at(0), "Duração");
+            int duracao = UtilsCsv::extrair<int>(campos.at(0), "Duração");
 
             // texto fora da lista é recusado, não vira o último valor
             Tamanho tam;
@@ -39,8 +39,8 @@ namespace ServicoFactory {
                 throw DadoInvalidoException("Colunas insuficientes/excessivas para a tag Piercing (esperado 3).");
             }
 
-            int duracao = UtilsCsv::extrairInt(campos.at(0), "Duração");
-            double preco = UtilsCsv::extrairDouble(campos.at(2), "Preço da Joia");
+            int duracao = UtilsCsv::extrair<int>(campos.at(0), "Duração");
+            double preco = UtilsCsv::extrair<double>(campos.at(2), "Preço da Joia");
 
             return std::make_unique<Piercing>(duracao, campos.at(1), preco);
 
@@ -49,7 +49,7 @@ namespace ServicoFactory {
                 throw DadoInvalidoException("Colunas insuficientes/excessivas para a tag Retoque (esperado 2).");
             }
 
-            int duracao = UtilsCsv::extrairInt(campos.at(0), "Duração");
+            int duracao = UtilsCsv::extrair<int>(campos.at(0), "Duração");
 
             // só "sim" ou "nao" (entrada 18 de docs/decisoes.md)
             bool feitaAqui;
