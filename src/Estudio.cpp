@@ -21,6 +21,8 @@ Estudio::Estudio() {}
 Estudio::~Estudio() {}
 
 void Estudio::cadastrarCliente(const Cliente& cliente) {
+    // Lock para proteger o acesso ao map de clientes
+    std::lock_guard<std::mutex> lock(mtx_);
     // Tenta encontrar o cliente; se achar, significa que já existe
     if (clientes_.find(cliente.getCpf()) != clientes_.end()) {
         throw EstudioException("Já existe um cliente cadastrado com este CPF.");
@@ -30,6 +32,7 @@ void Estudio::cadastrarCliente(const Cliente& cliente) {
 }
 
 void Estudio::cadastrarFuncionario(const Funcionario& funcionario) {
+    std::lock_guard<std::mutex> lock(mtx_);
     if (funcionarios_.find(funcionario.getCpf()) != funcionarios_.end()) {
         throw EstudioException("Já existe um funcionário cadastrado com este CPF.");
     }
@@ -78,6 +81,8 @@ void Estudio::validarAgendamento(const std::string& cpfCliente, const std::strin
 
 void Estudio::agendar(const std::string& cpfCliente, const std::string& cpfFuncionario,
                       const std::string& dataHora, std::unique_ptr<Servico> servico) {
+
+    std::lock_guard<std::mutex> lock(mtx_);
     validarAgendamento(cpfCliente, cpfFuncionario, dataHora, *servico);
 
     // Criar o agendamento se todas as validações passarem.
@@ -87,6 +92,7 @@ void Estudio::agendar(const std::string& cpfCliente, const std::string& cpfFunci
 }
 
 std::vector<const Agendamento*> Estudio::agendamentosDoCliente(const std::string& cpfCliente) const {
+    std::lock_guard<std::mutex> lock(mtx_);
     std::vector<const Agendamento*> resultado;
     for (const auto& ag : agendamentos_) {
         if (ag.getCpfCliente() == cpfCliente) {
@@ -98,6 +104,7 @@ std::vector<const Agendamento*> Estudio::agendamentosDoCliente(const std::string
 }
 
 std::vector<const Agendamento*> Estudio::agendamentosDoFuncionario(const std::string& cpfFuncionario) const {
+    std::lock_guard<std::mutex> lock(mtx_);
     std::vector<const Agendamento*> resultado;
     for (const auto& ag : agendamentos_) {
         if (ag.getCpfFuncionario() == cpfFuncionario) {
@@ -110,6 +117,7 @@ std::vector<const Agendamento*> Estudio::agendamentosDoFuncionario(const std::st
 
 // --- PERSISTÊNCIA: SALVAR (entrada 18 de docs/decisoes.md) ---
 void Estudio::salvar() const {
+    std::lock_guard<std::mutex> lock(mtx_);
     namespace fs = std::filesystem;
 
     try {
@@ -172,6 +180,8 @@ static std::vector<std::string> quebrarLinhaCsv(const std::string& linha) {
     return campos;
 }
 
+// não trava o mutex: chama os cadastros, que já travam, e roda antes
+// de o auto-save começar (entrada 26 de docs/decisoes.md)
 void Estudio::carregar() {
     clientes_.clear();
     funcionarios_.clear();
