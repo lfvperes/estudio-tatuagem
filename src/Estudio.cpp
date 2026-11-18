@@ -126,41 +126,72 @@ void Estudio::salvar() const {
         throw PersistenciaException(DIR_DADOS, "Não foi possível criar o diretório de dados.");
     }
 
-    std::ofstream outClientes(DIR_DADOS + ARQ_CLIENTES);
-    if (!outClientes) throw PersistenciaException(ARQ_CLIENTES, "Falha ao abrir arquivo para escrita.");
-    outClientes << "cpf;nome;alergiasObservacoes\n";
-    for (const auto& [cpf, c] : clientes_) {
-        outClientes << c.getCpf() << UtilsCsv::SEPARADOR
-                    << c.getNome() << UtilsCsv::SEPARADOR
-                    << c.getAlergiasObservacoes() << "\n";
-    }
+    // Função lambda genérica para salvar qualquer arquivo usando o padrão .tmp
+    // (entrada 28 de docs/decisoes.md)
+    auto salvarArquivoTemporario = [](const std::string& nomeArquivo, auto escreverConteudo) {
+        std::string caminhoTemp = DIR_DADOS + nomeArquivo + ".tmp";
+        std::string caminhoFinal = DIR_DADOS + nomeArquivo;
 
-    std::ofstream outFunc(DIR_DADOS + ARQ_FUNCIONARIOS);
-    if (!outFunc) throw PersistenciaException(ARQ_FUNCIONARIOS, "Falha ao abrir arquivo para escrita.");
-    outFunc << "cpf;nome;especialidade;comissao\n";
-    for (const auto& [cpf, f] : funcionarios_) {
-        // Reuso limpo da função do header
-        outFunc << f.getCpf() << UtilsCsv::SEPARADOR
+        std::ofstream out(caminhoTemp);
+        if (!out) {
+            throw PersistenciaException(caminhoTemp, "Falha ao abrir arquivo temporário para escrita.");
+        }
+
+        // Executa a lógica de gravação específica (fornecida no lambda)
+        escreverConteudo(out);
+
+        // Fecha o arquivo ANTES de checar o estado da gravação para garantir flush
+        out.close();
+
+        if (out.fail()) {
+            throw PersistenciaException(caminhoTemp, "Falha ao gravar os dados no disco (possível disco cheio).");
+        }
+
+        // Tenta renomear o arquivo .tmp substituindo o original, capturando filesystem_error
+        try {
+            fs::rename(caminhoTemp, caminhoFinal);
+        } catch (const fs::filesystem_error& e) {
+            throw PersistenciaException(nomeArquivo, std::string("Erro ao substituir o arquivo original pelo temporário: ") + e.what());
+        }
+    };
+
+    // 1. Salvar Clientes
+    salvarArquivoTemporario(ARQ_CLIENTES, [this](std::ofstream& out) {
+        out << "cpf;nome;alergiasObservacoes\n";
+        for (const auto& [cpf, c] : clientes_) {
+            out << c.getCpf() << UtilsCsv::SEPARADOR
+                << c.getNome() << UtilsCsv::SEPARADOR
+                << c.getAlergiasObservacoes() << "\n";
+        }
+    });
+
+    // 2. Salvar Funcionários
+    salvarArquivoTemporario(ARQ_FUNCIONARIOS, [this](std::ofstream& out) {
+        out << "cpf;nome;especialidade;comissao\n";
+        for (const auto& [cpf, f] : funcionarios_) {
+            out << f.getCpf() << UtilsCsv::SEPARADOR
                 << f.getNome() << UtilsCsv::SEPARADOR
                 << especialidadeParaString(f.getEspecialidade()) << UtilsCsv::SEPARADOR
                 << f.getComissao() << "\n";
-    }
+        }
+    });
 
-    std::ofstream outAg(DIR_DADOS + ARQ_AGENDAMENTOS);
-    if (!outAg) throw PersistenciaException(ARQ_AGENDAMENTOS, "Falha ao abrir arquivo para escrita.");
-    outAg << "cpfCliente;cpfFuncionario;dataHora;status;pago;tipoServico;camposServico...\n";
-    for (const auto& ag : agendamentos_) {
-        std::string statusStr = (ag.getStatus() == Status::Agendado) ? "Agendado" :
-                                (ag.getStatus() == Status::Confirmado) ? "Confirmado" : "Cancelado";
-        std::string pagoStr = ag.isPago() ? "sim" : "nao";
+    // 3. Salvar Agendamentos
+    salvarArquivoTemporario(ARQ_AGENDAMENTOS, [this](std::ofstream& out) {
+        out << "cpfCliente;cpfFuncionario;dataHora;status;pago;tipoServico;camposServico...\n";
+        for (const auto& ag : agendamentos_) {
+            std::string statusStr = (ag.getStatus() == Status::Agendado) ? "Agendado" :
+                                    (ag.getStatus() == Status::Confirmado) ? "Confirmado" : "Cancelado";
+            std::string pagoStr = ag.isPago() ? "sim" : "nao";
 
-        outAg << ag.getCpfCliente() << UtilsCsv::SEPARADOR
-              << ag.getCpfFuncionario() << UtilsCsv::SEPARADOR
-              << ag.getDataHora() << UtilsCsv::SEPARADOR
-              << statusStr << UtilsCsv::SEPARADOR
-              << pagoStr << UtilsCsv::SEPARADOR
-              << ag.getServico().gerarCSV() << "\n";
-    }
+            out << ag.getCpfCliente() << UtilsCsv::SEPARADOR
+                << ag.getCpfFuncionario() << UtilsCsv::SEPARADOR
+                << ag.getDataHora() << UtilsCsv::SEPARADOR
+                << statusStr << UtilsCsv::SEPARADOR
+                << pagoStr << UtilsCsv::SEPARADOR
+                << ag.getServico().gerarCSV() << "\n";
+        }
+    });
 }
 
 
