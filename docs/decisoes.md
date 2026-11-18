@@ -604,6 +604,149 @@ sequência de 11 dígitos é aceita.
 **Revisitar se** for preciso aceitar o CPF formatado: aí a normalização
 entra antes da validação, e as chaves continuam únicas.
 
+## 25. Auto-save numa thread própria
+
+**Contexto.** Sem auto-save, encerrar com Ctrl+C ou fechando o terminal
+perde tudo desde o início da execução (limitação da entrada 23). A parte 2
+pede uma thread que salve os dados periodicamente.
+
+**Alternativas para onde fica a thread.**
+- Dentro do `Estudio`, com métodos para iniciar e parar: o `Estudio` passa a
+  cuidar também de agendar execução, além das regras do estúdio.
+- Solta no `main`: nada garante que ela seja encerrada em todos os caminhos.
+- Uma classe própria que recebe uma referência ao `Estudio`.
+
+**Alternativas para parar a thread.**
+- Flag `std::atomic<bool>` e `sleep_for` com o intervalo inteiro: a saída do
+  programa pode esperar até um intervalo.
+- O mesmo, dormindo em passos curtos: responde mais rápido, mas acorda à
+  toa.
+- `std::condition_variable` com `wait_for`: a thread acorda assim que é
+  avisada.
+
+**Decisão.**
+- Uma classe `AutoSalvamento` recebe uma referência ao `Estudio`, inicia a
+  thread no construtor e a encerra no destrutor (RAII).
+- O intervalo é fixo, definido por uma constante. A cada intervalo a thread
+  chama o mesmo `salvar()` do `Estudio` (entrada 23), sempre, sem verificar
+  se houve alteração.
+- A espera usa `std::condition_variable::wait_for` com um mutex e uma flag
+  de parada próprios da `AutoSalvamento`, separados do mutex do `Estudio`
+  (entrada 26). O `wait_for` recebe um predicado que testa a flag, para que
+  um despertar espúrio não seja confundido com um pedido de parada.
+- Para parar, o destrutor liga a flag, avisa a thread com `notify_one()` e
+  chama `join()`.
+- No encerramento, o `main` primeiro destrói a `AutoSalvamento` (a thread
+  para e termina) e só depois faz o `salvar()` final.
+
+**Motivo.**
+- A classe própria mantém o `Estudio` responsável só pelas regras do
+  estúdio. O destrutor garante o `join()` em qualquer caminho de saída: uma
+  `std::thread` destruída sem `join()` chama `std::terminate`.
+- O `condition_variable` faz o programa fechar na hora, sem esperar o fim
+  do intervalo.
+- Parar a thread antes do salvamento final torna a saída previsível: o
+  último salvamento nunca roda junto com um auto-save.
+
+**Limitação aceita.** Gravar sempre reescreve os arquivos mesmo sem
+alteração. Com poucos dados, o custo é desprezível.
+
+**Revisitar se** os arquivos crescerem: uma flag de "alterado", marcada
+pelos métodos de escrita, evitaria gravações inúteis.
+
+## 26. Mutex no `Estudio`
+
+**Contexto.** Com o auto-save, duas threads usam o mesmo `Estudio`: a do
+menu escreve (cadastros e `agendar()`) e a do auto-save lê (`salvar()`).
+Ler um `map` ou `vector` enquanto outra thread o modifica é condição de
+corrida e comportamento indefinido.
+
+**Alternativas.**
+- O `main` trava um mutex antes de cada chamada ao `Estudio`: basta
+  esquecer uma chamada para abrir uma corrida.
+- O próprio `Estudio` guarda o mutex e se protege.
+
+**Decisão.**
+- O `Estudio` tem um `mutable std::mutex`. O `mutable` é necessário porque
+  `salvar()` e as consultas são `const`.
+- Todos os métodos públicos travam o mutex com `std::lock_guard`, exceto o
+  `carregar()`.
+- O `carregar()` não trava. Ele chama os métodos de cadastro, que já travam:
+  se ele também travasse o mesmo `std::mutex`, a thread esperaria por ela
+  mesma (deadlock). Fica documentado que ele roda antes de a thread do
+  auto-save começar.
+- O `salvar()` mantém o mutex travado durante toda a gravação no disco.
+
+**Motivo.**
+- A classe protege o próprio estado, como já faz com as validações, e
+  ninguém de fora precisa lembrar de travar.
+- Travar todos os métodos públicos é uma regra única, fácil de conferir, e
+  cobre qualquer método de escrita que o menu ganhe depois.
+- Com poucos dados, o menu espera poucos milissegundos durante uma
+  gravação.
+
+**Alternativas descartadas para o `carregar()`.**
+- Versões privadas dos cadastros que não travam: mais código para um caso
+  que só acontece antes da thread existir.
+- `std::recursive_mutex`: permite travar duas vezes na mesma thread, mas
+  esconde o problema em vez de resolvê-lo.
+
+**Limitações aceitas.**
+- As consultas devolvem ponteiros para dentro do `vector` (aviso em `Estudio.hpp`), que
+  continuam sendo usados depois de o mutex ser liberado. Isso é seguro
+  porque só a thread do menu escreve, e é ela mesma que usa os ponteiros. O
+  auto-save só lê.
+- Chamar o `carregar()` com o auto-save rodando seria uma corrida.
+
+**Revisitar se** a gravação ficar lenta: o texto dos CSVs pode ser gerado
+com o mutex travado e escrito no disco depois de liberá-lo.
+
+## 27. Erros no auto-save
+
+**Contexto.** Uma exceção que escapa da função de uma thread chama
+`std::terminate` e derruba o programa. O `salvar()` pode lançar
+`PersistenciaException` (disco cheio, pasta sem permissão).
+
+**Alternativas.**
+- Mostrar o erro na hora: a mensagem pode aparecer no meio do que o usuário
+  está digitando no menu, e o `std::cout` passaria a ser usado por duas
+  threads.
+- Guardar a mensagem e o menu mostrar o aviso na próxima volta do laço.
+- Ignorar e tentar de novo no próximo intervalo.
+
+**Decisão.** A thread envolve o `salvar()` num `try/catch`, ignora a falha
+e tenta de novo no próximo intervalo. O auto-save não escreve nada na tela,
+nem em caso de sucesso.
+
+**Motivo.** É a opção mais simples, e o menu não é interrompido. O
+salvamento final do `main` continua mostrando o erro (entrada 23), então
+uma falha persistente aparece no fim da execução.
+
+**Limitação aceita.** Se o disco falhar durante a execução, o usuário só
+descobre ao sair.
+
+## 28. Gravação por arquivo temporário
+
+**Contexto.** Com o auto-save, uma gravação pode ser interrompida no meio
+(Ctrl+C, terminal fechado). Gravar direto no arquivo final deixaria um CSV
+pela metade, e a próxima carga o recusaria (entrada 22). Esse era o
+"revisitar" da entrada 23.
+
+**Decisão.** Cada arquivo é gravado primeiro num temporário (por exemplo
+`clientes.csv.tmp`). Depois de fechado com sucesso, ele substitui o
+original com `std::filesystem::rename`.
+
+**Motivo.** A troca de nome substitui o arquivo de uma vez: um travamento no
+meio da escrita deixa o arquivo antigo inteiro, e só o temporário fica
+incompleto.
+
+**Limitação aceita.** Os três arquivos são trocados um por um. Um travamento
+entre duas trocas deixa, por exemplo, um `clientes.csv` novo com
+`agendamentos.csv` antigo. A carga continua funcionando, porque um arquivo
+mais novo de clientes só pode ter clientes a mais (o menu não remove
+ninguém), mas os agendamentos
+desde o último salvamento se perdem.
+
 ## Fora do escopo por ora
 
 - Forma de pagamento (dinheiro, Pix, cartão) e pagamento parcial.
