@@ -12,6 +12,7 @@
 #include "Retoque.hpp"
 #include "EstudioException.hpp"
 #include "DadoInvalidoException.hpp"
+#include "PersistenciaException.hpp"
 
 // Função auxiliar para limpar o buffer do teclado (evita saltos no std::getline)
 void limparBuffer() {
@@ -42,6 +43,16 @@ static std::string statusParaString(Status status) {
 
 int main() {
     Estudio estudio;
+
+    // 1. CARREGAR (entrada 23 de docs/decisoes.md)
+    try {
+        estudio.carregar();
+    } catch (const PersistenciaException& e) {
+        std::cout << "\n[ERRO CRÍTICO NA INICIALIZAÇÃO DOS DADOS]\n" << e.what() << "\n";
+        std::cout << "O sistema será encerrado para evitar corrupção ou sobrescrita de arquivos.\n";
+        return 1;
+    }
+
     int opcao = -1;
 
     while (opcao != 0) {
@@ -225,7 +236,16 @@ int main() {
             std::cout << "\n[ERRO DESCONHECIDO] " << e.what() << "\n";
         }
     }
-    
+    // 2. SALVAR NA SAÍDA (entrada 23 de docs/decisoes.md)
     std::cout << "Encerrando o sistema...\n";
+    try {
+        estudio.salvar();
+        std::cout << "Dados salvos com sucesso na pasta 'dados/'.\n";
+    } catch (const PersistenciaException& e) {
+        std::cout << "\n[FALHA AO SALVAR DADOS]\n" << e.what() << "\n";
+        std::cout << "Aviso: Suas últimas alterações podem não ter sido gravadas.\n";
+        return 1;
+    }
+
     return 0;
 }

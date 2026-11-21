@@ -5,7 +5,7 @@
 Funcionario::Funcionario(const std::string& nome, const std::string& cpf, Especialidade especialidade, double comissao)
     : Pessoa(nome, cpf), especialidade_(especialidade), comissao_(comissao) {
     
-    if (comissao_ < 0.0 || comissao_ > 100.0) {
+    if (!(comissao_ >= 0.0 && comissao_ <= 100.0)) {
         throw DadoInvalidoException("A comissão deve ser um valor entre 0 e 100.");
     }
 }
@@ -16,16 +16,6 @@ Especialidade Funcionario::getEspecialidade() const {
 
 double Funcionario::getComissao() const {
     return comissao_;
-}
-
-static std::string especialidadeParaString(Especialidade especialidade) {
-    switch (especialidade) {
-        case Especialidade::Tatuagem:
-            return "Tatuagem";
-        case Especialidade::Piercing:
-            return "Piercing";
-    }
-    return "?";
 }
 
 void Funcionario::exibirInfo() const {

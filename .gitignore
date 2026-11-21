@@ -5,6 +5,9 @@ build/
 *.out
 *.app
 
+# Ignorar o diretório com a base de dados em persistência CSV
+dados/
+
 # IDE
 .vscode/
 .idea/

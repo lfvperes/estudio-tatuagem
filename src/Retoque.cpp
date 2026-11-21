@@ -1,4 +1,5 @@
 #include "Retoque.hpp"
+#include "UtilsCsv.hpp"
 
 constexpr double TAXA_FIXA_SESSAO = 30;
 constexpr double TAXA_MAO_DE_OBRA = 40;
@@ -20,4 +21,12 @@ double Retoque::calcularPreco() const {
 
 std::string Retoque::detalhes() const {
     return "Retoque (feita " + std::string(feitaNoEstudio_ ? "no" : "fora do") + " estúdio, " + Servico::detalhes() + ")";
+}
+
+std::string Retoque::gerarCSV() const {
+    // bools gravados como sim/nao (entrada 18 de docs/decisoes.md)
+    std::string feitaStr = feitaNoEstudio_ ? "sim" : "nao";
+    return std::string("Retoque") + UtilsCsv::SEPARADOR
+         + Servico::gerarCSV() + UtilsCsv::SEPARADOR
+         + feitaStr;
 }

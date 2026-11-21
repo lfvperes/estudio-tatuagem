@@ -75,3 +75,18 @@ static std::string complexidadeParaString(Complexidade complexidade) {
 std::string Tatuagem::detalhes() const {
     return "Tatuagem (" + tamanhoParaString(tamanho_) + ", complexidade " + complexidadeParaString(complexidade_) + ", " + Servico::detalhes() + "): " + descricao_;
 }
+
+std::string Tatuagem::gerarCSV() const {
+    // enums gravados sem acentos e com o nome exato (entrada 18 de docs/decisoes.md)
+    std::string tamStr = (tamanho_ == Tamanho::Pequena) ? "Pequena" : 
+                         (tamanho_ == Tamanho::Media) ? "Media" : "Grande";
+                         
+    std::string compStr = (complexidade_ == Complexidade::Baixa) ? "Baixa" : 
+                          (complexidade_ == Complexidade::Media) ? "Media" : "Alta";
+
+    return std::string("Tatuagem") + UtilsCsv::SEPARADOR
+         + Servico::gerarCSV() + UtilsCsv::SEPARADOR
+         + tamStr + UtilsCsv::SEPARADOR
+         + compStr + UtilsCsv::SEPARADOR
+         + descricao_;
+}

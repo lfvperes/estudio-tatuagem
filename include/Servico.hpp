@@ -11,6 +11,8 @@ class Servico {
         double taxaMaoDeObra_;
         double taxaFixaSessao_;
     public:
+        // grava a parte comum (duração); as filhas acrescentam tag e campos próprios
+        virtual std::string gerarCSV() const;
         Servico(int duracaoMinutos, Especialidade especialidade, double taxaMaoDeObra, double taxaFixaSessao);
         virtual ~Servico();
         int getDuracaoMinutos() const;

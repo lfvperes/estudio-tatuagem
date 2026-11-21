@@ -18,6 +18,12 @@ class Agendamento {
         std::unique_ptr<Servico> servico_;
     public:
         Agendamento(const std::string& cpfCliente, const std::string& cpfFuncionario, const std::string& dataHora, std::unique_ptr<Servico> servico);
+
+        // restaura dados do CSV, ver entrada 21 de docs/decisoes.md
+        Agendamento(const std::string& cpfCliente, const std::string& cpfFuncionario,
+                    const std::string& dataHora, std::unique_ptr<Servico> servico,
+                    Status status, bool pago);
+
         void confirmar();
         void cancelar();
         void pagar();
