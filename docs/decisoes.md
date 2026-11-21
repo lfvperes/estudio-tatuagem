@@ -288,6 +288,9 @@ exemplo, data inválida), o serviço é destruído junto, sem vazamento, graças
 ao `unique_ptr`. O menu deve recriar o serviço se o usuário digitar a data
 de novo.
 
+**Atualizado na entrada 30:** o menu escolhe a fábrica, e é ela que cria o
+serviço.
+
 ## 12. `Status` com três valores e `pago_` separado
 
 **Contexto.** O agendamento passa por etapas, e o pagamento é um fato à
@@ -492,8 +495,8 @@ tipo.
   num único lugar fora do `Estudio`, que continua sem conhecer os tipos
   concretos (entrada 11).
 
-**Revisitar se** o menu passar a usar a mesma fábrica para criar o serviço:
-os dois caminhos ficariam unificados.
+**Revisitado na entrada 30:** o menu e a carga passam a usar as mesmas
+fábricas (Factory Method).
 
 ## 21. Restaurar o estado do `Agendamento` na carga
 
@@ -817,6 +820,76 @@ chamada usa esses tipos.
 **Revisitar se** for preciso ler outro tipo de campo, como data ou enum:
 seria um template diferente, ou uma especialização, porque esses tipos não
 são numéricos.
+
+## 30. Factory Method para criar os serviços
+
+**Contexto.** O menu cria o serviço com um `if/else` por tipo, cada ramo com
+as próprias perguntas e um `std::make_unique` do tipo concreto (entrada 11).
+A carga do CSV cria o mesmo serviço por outro caminho, a
+`ServicoFactory::criarDoCSV` (entrada 20). A conversão de cada tipo existe
+em dois lugares, e a parte 2 pede um padrão de projeto.
+
+**Alternativas para o padrão.**
+- Estender a `ServicoFactory` atual para o menu: uma função que decide o
+  tipo por um parâmetro. É uma *Simple Factory*, não o Factory Method do
+  GoF.
+- Factory Method: uma classe abstrata de fábrica com um método virtual de
+  criação, sobrescrito por uma fábrica concreta para cada tipo de serviço.
+
+**Alternativas para as perguntas ao usuário.**
+- A fábrica lê o `std::cin`: ela passa a depender do terminal e não serve
+  para a carga, que não tem teclado.
+- O menu mantém as perguntas de cada tipo e só a criação vai para a
+  fábrica: o `if` por tipo continua no menu.
+- A fábrica informa o que precisa perguntar, e o menu pergunta num laço
+  único.
+
+**Decisão.**
+- Uma classe abstrata `FabricaServico` e três fábricas concretas:
+  `FabricaTatuagem`, `FabricaPiercing` e `FabricaRetoque`.
+- Cada fábrica tem dois métodos virtuais:
+  - `perguntas()` devolve, para cada campo do serviço, o texto da pergunta
+    e a lista de opções válidas (vazia para campo livre, como duração ou
+    descrição);
+  - `criar(campos)` recebe os campos como texto
+    (`std::vector<std::string>`), no mesmo formato das colunas do CSV, e
+    devolve o `std::unique_ptr<Servico>`.
+- O menu faz as perguntas num laço único, sem `if` por tipo. Quando o campo
+  tem opções, o menu as mostra numeradas, lê o número e o troca pelo texto
+  da opção (por exemplo, `1` vira `Media`) antes de chamar `criar()`.
+- A escolha da fábrica é feita por um `switch` num único lugar: pelo número
+  da opção no menu e pela tag na carga do CSV.
+- A carga do CSV passa a usar as mesmas fábricas. A `criarDoCSV` deixa de
+  conter a conversão de cada tipo: ela só escolhe a fábrica pela tag e
+  repassa os campos.
+- As validações atuais continuam no `criar()` de cada fábrica: quantidade
+  de campos, texto de enum ou bool estrito e números lidos com
+  `UtilsCsv::extrair<T>` (entrada 29).
+
+**Motivo.**
+- O Factory Method usa herança e polimorfismo, como o resto do projeto, e é
+  o padrão que o nome indica.
+- Com `perguntas()`, cada fábrica conhece os próprios campos, e o menu fica
+  genérico: um tipo novo de serviço exige uma fábrica nova e um caso no
+  `switch`, sem mudar o laço de perguntas.
+- Receber texto permite uma única assinatura de `criar()` para os três
+  tipos, e a mesma fábrica atende o menu e o arquivo.
+- Um único caminho de criação garante as mesmas validações para o que vem
+  do teclado e do CSV.
+- O `switch` é mais simples de explicar que um registro em `std::map`, e
+  fica num único lugar.
+
+**Mudanças de comportamento aceitas.**
+- No retoque, a resposta deixa de ser `s/n`: o menu mostra as opções
+  numeradas, como nos outros campos com opções.
+- As mensagens de erro do menu para esses campos passam a ser as da
+  fábrica, como "O campo Duração não contém um número válido.".
+- O menu deixa de criar o serviço diretamente: a entrada 11 continua valendo
+  no sentido de que o `Estudio` recebe o `unique_ptr<Servico>` pronto, mas
+  quem o cria é a fábrica escolhida pelo menu.
+
+**Revisitar se** os tipos de serviço passarem a ser muitos: um registro
+(`std::map` da tag para a fábrica) substituiria o `switch`.
 
 ## Fora do escopo por ora
 
