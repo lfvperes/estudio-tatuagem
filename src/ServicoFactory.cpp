@@ -1,65 +1,30 @@
 #include "ServicoFactory.hpp"
-#include "Tatuagem.hpp"
-#include "Piercing.hpp"
-#include "Retoque.hpp"
+#include "FabricaTatuagem.hpp"
+#include "FabricaPiercing.hpp"
+#include "FabricaRetoque.hpp"
 #include "DadoInvalidoException.hpp"
-#include "UtilsCsv.hpp"
 
-namespace ServicoFactory {
-
-    std::unique_ptr<Servico> criarDoCSV(const std::string& tag, const std::vector<std::string>& campos) {
-        // erros de dado viram DadoInvalidoException; quem lê o arquivo
-        // acrescenta arquivo e linha (entrada 22 de docs/decisoes.md)
-
-        if (tag == "Tatuagem") {
-            if (campos.size() != 4) { // quantidade exata de colunas da tag
-                throw DadoInvalidoException("Colunas insuficientes/excessivas para a tag Tatuagem (esperado 4).");
-            }
-
-            int duracao = UtilsCsv::extrair<int>(campos.at(0), "Duração");
-
-            // texto fora da lista é recusado, não vira o último valor
-            Tamanho tam;
-            if (campos.at(1) == "Pequena") tam = Tamanho::Pequena;
-            else if (campos.at(1) == "Media") tam = Tamanho::Media;
-            else if (campos.at(1) == "Grande") tam = Tamanho::Grande;
-            else throw DadoInvalidoException("Tamanho inválido para tatuagem: " + campos.at(1));
-
-            // texto fora da lista é recusado, não vira o último valor
-            Complexidade comp;
-            if (campos.at(2) == "Baixa") comp = Complexidade::Baixa;
-            else if (campos.at(2) == "Media") comp = Complexidade::Media;
-            else if (campos.at(2) == "Alta") comp = Complexidade::Alta;
-            else throw DadoInvalidoException("Complexidade inválida para tatuagem: " + campos.at(2));
-
-            return std::make_unique<Tatuagem>(duracao, tam, comp, campos.at(3));
-
-        } else if (tag == "Piercing") {
-            if (campos.size() != 3) { // quantidade exata de colunas da tag
-                throw DadoInvalidoException("Colunas insuficientes/excessivas para a tag Piercing (esperado 3).");
-            }
-
-            int duracao = UtilsCsv::extrair<int>(campos.at(0), "Duração");
-            double preco = UtilsCsv::extrair<double>(campos.at(2), "Preço da Joia");
-
-            return std::make_unique<Piercing>(duracao, campos.at(1), preco);
-
-        } else if (tag == "Retoque") {
-            if (campos.size() != 2) { // quantidade exata de colunas da tag
-                throw DadoInvalidoException("Colunas insuficientes/excessivas para a tag Retoque (esperado 2).");
-            }
-
-            int duracao = UtilsCsv::extrair<int>(campos.at(0), "Duração");
-
-            // só "sim" ou "nao" (entrada 18 de docs/decisoes.md)
-            bool feitaAqui;
-            if (campos.at(1) == "sim") feitaAqui = true;
-            else if (campos.at(1) == "nao") feitaAqui = false;
-            else throw DadoInvalidoException("Campo booleano de Retoque inválido (esperado sim/nao): " + campos.at(1));
-
-            return std::make_unique<Retoque>(duracao, feitaAqui);
-        }
-
-        throw DadoInvalidoException("Tag de serviço polimórfico desconhecida: " + tag);
+std::unique_ptr<FabricaServico> ServicoFactory::criarFabrica(int tipo) {
+    switch (tipo) {
+        case 1:
+            return std::make_unique<FabricaTatuagem>();
+        case 2:
+            return std::make_unique<FabricaPiercing>();
+        case 3:
+            return std::make_unique<FabricaRetoque>();
+        default:
+            throw DadoInvalidoException("Tipo de serviço inválido.");
     }
+}
+
+std::unique_ptr<FabricaServico> ServicoFactory::criarFabrica(const std::string& tag) {
+    if (tag == "Tatuagem") return criarFabrica(1);
+    if (tag == "Piercing") return criarFabrica(2);
+    if (tag == "Retoque")  return criarFabrica(3);
+    throw DadoInvalidoException("Tipo de serviço desconhecido no CSV: " + tag);
+}
+
+std::unique_ptr<Servico> ServicoFactory::criarDoCSV(const std::string& tag,
+                                                    const std::vector<std::string>& campos) {
+    return criarFabrica(tag)->criar(campos);
 }
