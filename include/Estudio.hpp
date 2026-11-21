@@ -11,6 +11,8 @@
 #include "Agendamento.hpp"
 #include "Servico.hpp"
 
+#include <mutex>
+
 class Estudio {
     private:
         // Mapas para busca rápida por CPF (entrada 10 de docs/decisoes.md)
@@ -19,6 +21,9 @@ class Estudio {
 
         // Vetor que guarda a posse de todos os agendamentos do estúdio
         std::vector<Agendamento> agendamentos_;
+
+        // Mutex para proteger o acesso a clientes_, funcionarios_ e agendamentos_ (entrada 26 de docs/decisoes.md)
+        mutable std::mutex mtx_;
 
         // Método privado para centralizar a validação (entrada 22 de docs/decisoes.md)
         void validarAgendamento(const std::string& cpfCliente, const std::string& cpfFuncionario,

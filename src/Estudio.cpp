@@ -21,6 +21,8 @@ Estudio::Estudio() {}
 Estudio::~Estudio() {}
 
 void Estudio::cadastrarCliente(const Cliente& cliente) {
+    // Lock para proteger o acesso ao map de clientes
+    std::lock_guard<std::mutex> lock(mtx_);
     // Tenta encontrar o cliente; se achar, significa que já existe
     if (clientes_.find(cliente.getCpf()) != clientes_.end()) {
         throw EstudioException("Já existe um cliente cadastrado com este CPF.");
@@ -30,6 +32,7 @@ void Estudio::cadastrarCliente(const Cliente& cliente) {
 }
 
 void Estudio::cadastrarFuncionario(const Funcionario& funcionario) {
+    std::lock_guard<std::mutex> lock(mtx_);
     if (funcionarios_.find(funcionario.getCpf()) != funcionarios_.end()) {
         throw EstudioException("Já existe um funcionário cadastrado com este CPF.");
     }
@@ -78,6 +81,8 @@ void Estudio::validarAgendamento(const std::string& cpfCliente, const std::strin
 
 void Estudio::agendar(const std::string& cpfCliente, const std::string& cpfFuncionario,
                       const std::string& dataHora, std::unique_ptr<Servico> servico) {
+
+    std::lock_guard<std::mutex> lock(mtx_);
     validarAgendamento(cpfCliente, cpfFuncionario, dataHora, *servico);
 
     // Criar o agendamento se todas as validações passarem.
@@ -87,6 +92,7 @@ void Estudio::agendar(const std::string& cpfCliente, const std::string& cpfFunci
 }
 
 std::vector<const Agendamento*> Estudio::agendamentosDoCliente(const std::string& cpfCliente) const {
+    std::lock_guard<std::mutex> lock(mtx_);
     std::vector<const Agendamento*> resultado;
     for (const auto& ag : agendamentos_) {
         if (ag.getCpfCliente() == cpfCliente) {
@@ -98,6 +104,7 @@ std::vector<const Agendamento*> Estudio::agendamentosDoCliente(const std::string
 }
 
 std::vector<const Agendamento*> Estudio::agendamentosDoFuncionario(const std::string& cpfFuncionario) const {
+    std::lock_guard<std::mutex> lock(mtx_);
     std::vector<const Agendamento*> resultado;
     for (const auto& ag : agendamentos_) {
         if (ag.getCpfFuncionario() == cpfFuncionario) {
@@ -110,6 +117,7 @@ std::vector<const Agendamento*> Estudio::agendamentosDoFuncionario(const std::st
 
 // --- PERSISTÊNCIA: SALVAR (entrada 18 de docs/decisoes.md) ---
 void Estudio::salvar() const {
+    std::lock_guard<std::mutex> lock(mtx_);
     namespace fs = std::filesystem;
 
     try {
@@ -118,41 +126,72 @@ void Estudio::salvar() const {
         throw PersistenciaException(DIR_DADOS, "Não foi possível criar o diretório de dados.");
     }
 
-    std::ofstream outClientes(DIR_DADOS + ARQ_CLIENTES);
-    if (!outClientes) throw PersistenciaException(ARQ_CLIENTES, "Falha ao abrir arquivo para escrita.");
-    outClientes << "cpf;nome;alergiasObservacoes\n";
-    for (const auto& [cpf, c] : clientes_) {
-        outClientes << c.getCpf() << UtilsCsv::SEPARADOR
-                    << c.getNome() << UtilsCsv::SEPARADOR
-                    << c.getAlergiasObservacoes() << "\n";
-    }
+    // Função lambda genérica para salvar qualquer arquivo usando o padrão .tmp
+    // (entrada 28 de docs/decisoes.md)
+    auto salvarArquivoTemporario = [](const std::string& nomeArquivo, auto escreverConteudo) {
+        std::string caminhoTemp = DIR_DADOS + nomeArquivo + ".tmp";
+        std::string caminhoFinal = DIR_DADOS + nomeArquivo;
 
-    std::ofstream outFunc(DIR_DADOS + ARQ_FUNCIONARIOS);
-    if (!outFunc) throw PersistenciaException(ARQ_FUNCIONARIOS, "Falha ao abrir arquivo para escrita.");
-    outFunc << "cpf;nome;especialidade;comissao\n";
-    for (const auto& [cpf, f] : funcionarios_) {
-        // Reuso limpo da função do header
-        outFunc << f.getCpf() << UtilsCsv::SEPARADOR
+        std::ofstream out(caminhoTemp);
+        if (!out) {
+            throw PersistenciaException(caminhoTemp, "Falha ao abrir arquivo temporário para escrita.");
+        }
+
+        // Executa a lógica de gravação específica (fornecida no lambda)
+        escreverConteudo(out);
+
+        // Fecha o arquivo ANTES de checar o estado da gravação para garantir flush
+        out.close();
+
+        if (out.fail()) {
+            throw PersistenciaException(caminhoTemp, "Falha ao gravar os dados no disco (possível disco cheio).");
+        }
+
+        // Tenta renomear o arquivo .tmp substituindo o original, capturando filesystem_error
+        try {
+            fs::rename(caminhoTemp, caminhoFinal);
+        } catch (const fs::filesystem_error& e) {
+            throw PersistenciaException(nomeArquivo, std::string("Erro ao substituir o arquivo original pelo temporário: ") + e.what());
+        }
+    };
+
+    // 1. Salvar Clientes
+    salvarArquivoTemporario(ARQ_CLIENTES, [this](std::ofstream& out) {
+        out << "cpf;nome;alergiasObservacoes\n";
+        for (const auto& [cpf, c] : clientes_) {
+            out << c.getCpf() << UtilsCsv::SEPARADOR
+                << c.getNome() << UtilsCsv::SEPARADOR
+                << c.getAlergiasObservacoes() << "\n";
+        }
+    });
+
+    // 2. Salvar Funcionários
+    salvarArquivoTemporario(ARQ_FUNCIONARIOS, [this](std::ofstream& out) {
+        out << "cpf;nome;especialidade;comissao\n";
+        for (const auto& [cpf, f] : funcionarios_) {
+            out << f.getCpf() << UtilsCsv::SEPARADOR
                 << f.getNome() << UtilsCsv::SEPARADOR
                 << especialidadeParaString(f.getEspecialidade()) << UtilsCsv::SEPARADOR
                 << f.getComissao() << "\n";
-    }
+        }
+    });
 
-    std::ofstream outAg(DIR_DADOS + ARQ_AGENDAMENTOS);
-    if (!outAg) throw PersistenciaException(ARQ_AGENDAMENTOS, "Falha ao abrir arquivo para escrita.");
-    outAg << "cpfCliente;cpfFuncionario;dataHora;status;pago;tipoServico;camposServico...\n";
-    for (const auto& ag : agendamentos_) {
-        std::string statusStr = (ag.getStatus() == Status::Agendado) ? "Agendado" :
-                                (ag.getStatus() == Status::Confirmado) ? "Confirmado" : "Cancelado";
-        std::string pagoStr = ag.isPago() ? "sim" : "nao";
+    // 3. Salvar Agendamentos
+    salvarArquivoTemporario(ARQ_AGENDAMENTOS, [this](std::ofstream& out) {
+        out << "cpfCliente;cpfFuncionario;dataHora;status;pago;tipoServico;camposServico...\n";
+        for (const auto& ag : agendamentos_) {
+            std::string statusStr = (ag.getStatus() == Status::Agendado) ? "Agendado" :
+                                    (ag.getStatus() == Status::Confirmado) ? "Confirmado" : "Cancelado";
+            std::string pagoStr = ag.isPago() ? "sim" : "nao";
 
-        outAg << ag.getCpfCliente() << UtilsCsv::SEPARADOR
-              << ag.getCpfFuncionario() << UtilsCsv::SEPARADOR
-              << ag.getDataHora() << UtilsCsv::SEPARADOR
-              << statusStr << UtilsCsv::SEPARADOR
-              << pagoStr << UtilsCsv::SEPARADOR
-              << ag.getServico().gerarCSV() << "\n";
-    }
+            out << ag.getCpfCliente() << UtilsCsv::SEPARADOR
+                << ag.getCpfFuncionario() << UtilsCsv::SEPARADOR
+                << ag.getDataHora() << UtilsCsv::SEPARADOR
+                << statusStr << UtilsCsv::SEPARADOR
+                << pagoStr << UtilsCsv::SEPARADOR
+                << ag.getServico().gerarCSV() << "\n";
+        }
+    });
 }
 
 
@@ -172,6 +211,8 @@ static std::vector<std::string> quebrarLinhaCsv(const std::string& linha) {
     return campos;
 }
 
+// não trava o mutex: chama os cadastros, que já travam, e roda antes
+// de o auto-save começar (entrada 26 de docs/decisoes.md)
 void Estudio::carregar() {
     clientes_.clear();
     funcionarios_.clear();
