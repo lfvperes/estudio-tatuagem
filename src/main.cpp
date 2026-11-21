@@ -7,9 +7,7 @@
 #include "Estudio.hpp"
 #include "Cliente.hpp"
 #include "Funcionario.hpp"
-#include "Tatuagem.hpp"
-#include "Piercing.hpp"
-#include "Retoque.hpp"
+#include "ServicoFactory.hpp"
 #include "EstudioException.hpp"
 #include "DadoInvalidoException.hpp"
 #include "PersistenciaException.hpp"
@@ -125,7 +123,7 @@ int main() {
 
                 } else if (opcao == 3) {
                     std::string cpfC, cpfF, dataHora;
-                    int tipoServico, duracao;
+                    int tipoServico;
 
                     std::cout << "CPF do Cliente (11 dígitos, apenas números): ";
                     std::getline(std::cin, cpfC);
@@ -139,77 +137,44 @@ int main() {
                         limparBuffer();
                         throw DadoInvalidoException("Entrada inválida. Digite um número para o tipo de serviço.");
                     }
-
-                    std::cout << "Duração (minutos): ";
-                    if (!(std::cin >> duracao)) {
-                        limparBuffer();
-                        throw DadoInvalidoException("Entrada inválida. Digite um número para a duração.");
-                    }
                     limparBuffer();
 
-                    std::unique_ptr<Servico> servico;
+                    std::unique_ptr<FabricaServico> fabrica = ServicoFactory::criarFabrica(tipoServico);
+                    std::vector<std::string> campos;
 
-                    if (tipoServico == 1) {
-                        int tamOpcao, compOpcao;
-                        std::string descricao;
+                    for (const Pergunta& pergunta : fabrica->perguntas()) {
+                        if (pergunta.opcoes.empty()) {
+                            std::string resposta;
+                            std::cout << pergunta.texto << ": ";
+                            std::getline(std::cin, resposta);
+                            campos.push_back(resposta);
+                        } else {
+                            std::cout << pergunta.texto << " (";
+                            for (std::size_t i = 0; i < pergunta.opcoes.size(); ++i) {
+                                if (i > 0) std::cout << ", ";
+                                std::cout << i + 1 << " - " << pergunta.opcoes[i];
+                            }
+                            std::cout << "): ";
 
-                        std::cout << "Tamanho (0 - Pequena, 1 - Média, 2 - Grande): ";
-                        if (!(std::cin >> tamOpcao)) {
+                            int escolha;
+                            if (!(std::cin >> escolha)) {
+                                limparBuffer();
+                                throw DadoInvalidoException("Entrada inválida. Digite o número de uma das opções.");
+                            }
                             limparBuffer();
-                            throw DadoInvalidoException("Entrada inválida. Digite um número para o tamanho.");
+
+                            // as opções aparecem a partir de 1; o vector começa em 0
+                            escolha -= 1;
+
+                            if (escolha < 0 || static_cast<std::size_t>(escolha) >= pergunta.opcoes.size()) {
+                                throw DadoInvalidoException("Opção inválida para " + pergunta.texto + ".");
+                            }
+
+                            campos.push_back(pergunta.opcoes[escolha]);
                         }
-                        // Nova validação de intervalo
-                        if (tamOpcao < 0 || tamOpcao > 2) {
-                            throw DadoInvalidoException("Opção de tamanho inválida. Escolha 0, 1 ou 2.");
-                        }
-
-                        std::cout << "Complexidade (0 - Baixa, 1 - Média, 2 - Alta): ";
-                        if (!(std::cin >> compOpcao)) {
-                            limparBuffer();
-                            throw DadoInvalidoException("Entrada inválida. Digite um número para a complexidade.");
-                        }
-                        // Nova validação de intervalo
-                        if (compOpcao < 0 || compOpcao > 2) {
-                            throw DadoInvalidoException("Opção de complexidade inválida. Escolha 0, 1 ou 2.");
-                        }
-                        limparBuffer();
-
-                        std::cout << "Descrição: ";
-                        std::getline(std::cin, descricao);
-
-                        Tamanho tam = static_cast<Tamanho>(tamOpcao);
-                        Complexidade comp = static_cast<Complexidade>(compOpcao);
-                        servico = std::make_unique<Tatuagem>(duracao, tam, comp, descricao);
-
-                    } else if (tipoServico == 2) {
-                        std::string tipoJoia;
-                        double precoJoia;
-
-                        std::cout << "Tipo da Joia: ";
-                        std::getline(std::cin, tipoJoia);
-
-                        std::cout << "Preço da Joia: ";
-                        if (!(std::cin >> precoJoia)) {
-                            limparBuffer();
-                            throw DadoInvalidoException("Entrada inválida. Digite um número para o preço.");
-                        }
-                        limparBuffer();
-
-                        servico = std::make_unique<Piercing>(duracao, tipoJoia, precoJoia);
-
-                    } else if (tipoServico == 3) {
-                        char feitaAqui;
-                        std::cout << "Tatuagem original foi feita neste estúdio? (s/n): ";
-                        std::cin >> feitaAqui;
-                        limparBuffer();
-
-                        bool feitaNoEstudio = (feitaAqui == 's' || feitaAqui == 'S');
-                        servico = std::make_unique<Retoque>(duracao, feitaNoEstudio);
-                    } else {
-                        std::cout << "Opção de serviço inválida.\n";
-                        continue;
                     }
 
+                    std::unique_ptr<Servico> servico = fabrica->criar(campos);
                     estudio.agendar(cpfC, cpfF, dataHora, std::move(servico));
                     std::cout << "Agendamento realizado com sucesso!\n";
 
