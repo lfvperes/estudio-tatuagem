@@ -1,8 +1,12 @@
 #include "Cliente.hpp"
+#include "UtilsCsv.hpp"
 #include <iostream>
 
 Cliente::Cliente(const std::string& nome, const std::string& cpf, const std::string& alergiasObservacoes)
-    : Pessoa(nome, cpf), alergiasObservacoes_(alergiasObservacoes) {}
+    : Pessoa(nome, cpf), alergiasObservacoes_(alergiasObservacoes) {
+    // texto gravado no CSV, ver entrada 19 de docs/decisoes.md
+    UtilsCsv::validarTextoLivre(alergiasObservacoes_, "Alergias/Observações");
+}
 
 std::string Cliente::getAlergiasObservacoes() const {
     return alergiasObservacoes_;
