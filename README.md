@@ -35,14 +35,30 @@ A IA é usada para:
 - **Tratamento de erros com exceções**: hierarquia própria de exceções
   derivada de `std::runtime_error`.
 
+Segunda etapa:
+
+- **Persistência de dados**: clientes, funcionários e agendamentos são
+  gravados em arquivos CSV na pasta `dados/` e carregados ao iniciar
+  (entradas 18 a 24 de [`docs/decisoes.md`](docs/decisoes.md)).
+- **Threads**: a classe `AutoSalvamento` mantém uma `std::thread` que salva
+  os dados a cada 30 segundos. O `Estudio` é protegido por um `std::mutex`
+  (entradas 25 a 28).
+- **Tipos genéricos (templates)**: `UtilsCsv::extrair<T>` lê qualquer tipo
+  numérico de um campo do CSV com um único corpo, e um `static_assert`
+  recusa tipos não numéricos em tempo de compilação (entrada 29).
+- **Coleções**: `std::map` (clientes e funcionários indexados pelo CPF) e
+  `std::vector` (agendamentos e campos lidos do CSV), da biblioteca padrão.
+- **Padrão de projeto**: a `ServicoFactory` recria o tipo concreto de
+  `Servico` a partir da tag gravada no CSV (Factory, entrada 20).
+
 Todas as classes do diagrama estão implementadas: as hierarquias de
-`Servico`, `Pessoa` e de exceções, o `Agendamento`, o `Estudio` e o menu
-interativo em `src/main.cpp`. O menu permite cadastrar clientes e
-funcionários, agendar serviços e listar os agendamentos de um cliente ou de
-um funcionário. Mudar o estado de um agendamento (confirmar, cancelar,
-pagar) pelo menu está fora do escopo da entrega atual (ver entrada 17 de
-[`docs/decisoes.md`](docs/decisoes.md)). O diagrama abaixo reflete o código
-atual, e as justificativas de design estão no registro de decisões.
+`Servico`, `Pessoa` e de exceções, o `Agendamento`, o `Estudio`, a
+persistência, o auto-save e o menu interativo em `src/main.cpp`. O menu
+permite cadastrar clientes e funcionários, agendar serviços e listar os
+agendamentos de um cliente ou de um funcionário. Mudar o estado de um
+agendamento (confirmar, cancelar, pagar) pelo menu está fora do escopo da
+entrega atual (ver entrada 17). O diagrama abaixo reflete o código atual, e
+as justificativas de design estão no registro de decisões.
 
 ## Diagrama de classes
 
@@ -93,6 +109,7 @@ classDiagram
         +getTaxaMaoDeObra() double
         +getTaxaFixaSessao() double
         +detalhes() string
+        +gerarCSV() string
         +calcularPreco() double
     }
 
@@ -102,6 +119,7 @@ classDiagram
         -string descricao_
         +getDescricao() string
         +detalhes() string
+        +gerarCSV() string
         +calcularPreco() double
     }
 
@@ -126,6 +144,7 @@ classDiagram
         -string tipoJoia_
         -double precoJoia_
         +detalhes() string
+        +gerarCSV() string
         +calcularPreco() double
     }
 
@@ -133,6 +152,7 @@ classDiagram
         -bool feitaNoEstudio_
         +isFeitaNoEstudio() bool
         +detalhes() string
+        +gerarCSV() string
         +calcularPreco() double
     }
 
@@ -171,11 +191,37 @@ classDiagram
         -map~string, Cliente~ clientes_
         -map~string, Funcionario~ funcionarios_
         -vector~Agendamento~ agendamentos_
+        -mutex mtx_
+        -validarAgendamento(cpfCliente, cpfFuncionario, dataHora, Servico, Status) void
         +cadastrarCliente(Cliente) void
         +cadastrarFuncionario(Funcionario) void
         +agendar(cpfCliente, cpfFuncionario, dataHora, unique_ptr~Servico~) void
         +agendamentosDoCliente(cpfCliente) vector~const Agendamento*~
         +agendamentosDoFuncionario(cpfFuncionario) vector~const Agendamento*~
+        +salvar() void
+        +carregar() void
+    }
+
+    class AutoSalvamento {
+        -Estudio& estudio_
+        -mutex mtx_
+        -condition_variable cv_
+        -bool parar_
+        -thread thread_
+        -loop() void
+    }
+
+    class ServicoFactory {
+        <<namespace>>
+        +criarDoCSV(tag, campos) unique_ptr~Servico~
+    }
+
+    class UtilsCsv {
+        <<namespace>>
+        +SEPARADOR char
+        +validarTextoLivre(texto, nomeDoCampo) void
+        +limparRetornoDeCarro(linha) void
+        +extrair~T~(texto, nomeCampo) T
     }
 
     Agendamento ..> Cliente : referência por CPF
@@ -184,6 +230,10 @@ classDiagram
     Estudio --> Cliente
     Estudio --> Funcionario
     Estudio --> Agendamento
+    AutoSalvamento --> Estudio : salva periodicamente
+    Estudio ..> ServicoFactory : usa na carga
+    ServicoFactory ..> Servico : cria
+    Estudio ..> UtilsCsv
 
     class EstudioException {
         <<runtime_error>>
@@ -193,16 +243,20 @@ classDiagram
     class EspecialidadeIncompativelException
     class DadoInvalidoException
     class CancelamentoForaDoPrazoException
+    class PersistenciaException
 
     EstudioException <|-- HorarioIndisponivelException
     EstudioException <|-- EspecialidadeIncompativelException
     EstudioException <|-- DadoInvalidoException
     EstudioException <|-- CancelamentoForaDoPrazoException
+    EstudioException <|-- PersistenciaException
 ```
 
 ## Como compilar e rodar
 
-Requisitos: `g++` com suporte a C++17 e `make`.
+Requisitos: Linux (ou WSL no Windows), `g++` com suporte a C++17 e `make`.
+O projeto usa `<filesystem>` e `<thread>`, que o MinGW 6.3 do Windows não
+oferece. O `Makefile` já passa `-pthread` ao compilador.
 
 O `make` gera o executável em `build/estudio-tatuagem`, e o `make run`
 compila e abre o menu interativo no terminal.
@@ -221,6 +275,15 @@ Para limpar os artefatos de build:
 make clean
 ```
 
+### Dados salvos
+
+Os dados ficam em `dados/clientes.csv`, `dados/funcionarios.csv` e
+`dados/agendamentos.csv`, criados na pasta em que o programa é executado.
+Eles são carregados ao abrir o programa, salvos a cada 30 segundos pelo
+auto-save e salvos de novo ao sair pela opção 0. Se um arquivo estiver
+corrompido, o programa mostra o arquivo e a linha do erro e encerra sem
+salvar, para não sobrescrever os dados.
+
 ## Estrutura de pastas
 
 ```
@@ -229,6 +292,7 @@ estudio-tatuagem/
 ├── src/         # Implementações (.cpp) e main.cpp
 ├── docs/        # Registro de decisões de design (decisoes.md)
 ├── build/       # Artefatos de compilação (gerado pelo make, ignorado pelo git)
+├── dados/       # Arquivos CSV com os dados salvos (gerado pelo programa, ignorado pelo git)
 ├── Makefile
 ├── .gitignore
 └── README.md
@@ -313,6 +377,9 @@ git pull
 | `Agendamento` | Luís |
 | Exceções (`EstudioException` e derivadas) | Luís |
 | `Estudio` e menu | Miguel |
+| Persistência em CSV | Miguel |
+| Auto-save (thread e mutex) | Miguel |
+| Template `extrair<T>` | Miguel |
 
 ## Autores
 
