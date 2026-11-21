@@ -48,8 +48,11 @@ Segunda etapa:
   recusa tipos não numéricos em tempo de compilação (entrada 29).
 - **Coleções**: `std::map` (clientes e funcionários indexados pelo CPF) e
   `std::vector` (agendamentos e campos lidos do CSV), da biblioteca padrão.
-- **Padrão de projeto**: a `ServicoFactory` recria o tipo concreto de
-  `Servico` a partir da tag gravada no CSV (Factory, entrada 20).
+- **Padrão de projeto (Factory Method)**: a classe abstrata `FabricaServico`
+  declara `perguntas()` e `criar()`, e `FabricaTatuagem`, `FabricaPiercing`
+  e `FabricaRetoque` os sobrescrevem para criar cada tipo de `Servico`. O
+  menu faz as perguntas que a fábrica informa num laço único, sem `if` por
+  tipo, e a carga do CSV usa as mesmas fábricas (entrada 30).
 
 Todas as classes do diagrama estão implementadas: as hierarquias de
 `Servico`, `Pessoa` e de exceções, o `Agendamento`, o `Estudio`, a
@@ -211,9 +214,45 @@ classDiagram
         -loop() void
     }
 
+    class Pergunta {
+        <<struct>>
+        +string texto
+        +vector~string~ opcoes
+    }
+
+    class FabricaServico {
+        <<abstract>>
+        +perguntas() vector~Pergunta~
+        +criar(campos) unique_ptr~Servico~
+    }
+
+    class FabricaTatuagem {
+        +perguntas() vector~Pergunta~
+        +criar(campos) unique_ptr~Servico~
+    }
+
+    class FabricaPiercing {
+        +perguntas() vector~Pergunta~
+        +criar(campos) unique_ptr~Servico~
+    }
+
+    class FabricaRetoque {
+        +perguntas() vector~Pergunta~
+        +criar(campos) unique_ptr~Servico~
+    }
+
+    FabricaServico <|-- FabricaTatuagem
+    FabricaServico <|-- FabricaPiercing
+    FabricaServico <|-- FabricaRetoque
+    FabricaServico ..> Pergunta
+    FabricaTatuagem ..> Tatuagem : cria
+    FabricaPiercing ..> Piercing : cria
+    FabricaRetoque ..> Retoque : cria
+
     class ServicoFactory {
-        <<namespace>>
-        +criarDoCSV(tag, campos) unique_ptr~Servico~
+        +criarFabrica(tipo)$ unique_ptr~FabricaServico~
+        +criarFabrica(tag)$ unique_ptr~FabricaServico~
+        +criarDoCSV(tag, campos)$ unique_ptr~Servico~
     }
 
     class UtilsCsv {
@@ -232,7 +271,7 @@ classDiagram
     Estudio --> Agendamento
     AutoSalvamento --> Estudio : salva periodicamente
     Estudio ..> ServicoFactory : usa na carga
-    ServicoFactory ..> Servico : cria
+    ServicoFactory ..> FabricaServico : escolhe
     Estudio ..> UtilsCsv
 
     class EstudioException {
@@ -380,6 +419,7 @@ git pull
 | Persistência em CSV | Miguel |
 | Auto-save (thread e mutex) | Miguel |
 | Template `extrair<T>` | Miguel |
+| Factory Method (fábricas de serviço) | Miguel |
 
 ## Autores
 
