@@ -257,8 +257,8 @@ void Estudio::carregar() {
                 else if (campos[2] == "Piercing") esp = Especialidade::Piercing;
                 else throw DadoInvalidoException("Especialidade desconhecida no CSV.");
 
-                // Usa o extrator seguro e elimina o catch(invalid_argument) que falhava no out_of_range
-                double comissao = UtilsCsv::extrairDouble(campos[3], "Comissão");
+                // lê a comissão com o template (entrada 29 de docs/decisoes.md)
+                double comissao = UtilsCsv::extrair<double>(campos[3], "Comissão");
                 cadastrarFuncionario(Funcionario(campos[1], campos[0], esp, comissao));
             } catch (const EstudioException& e) {
                 throw PersistenciaException(ARQ_FUNCIONARIOS, numLinha, e.what());
